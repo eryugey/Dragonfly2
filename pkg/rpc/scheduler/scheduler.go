@@ -51,3 +51,19 @@ func NewEndPieceResult(taskID, peerID string, finishedCount int32) *PieceResult 
 		},
 	}
 }
+
+func NewQueryPieceResult(taskID, peerID string) *PieceResult {
+	return &PieceResult{
+		TaskId:        taskID,
+		SrcPid:        peerID,
+		FinishedCount: 0,
+		PieceInfo: &base.PieceInfo{
+			PieceNum:    common.QueryOfPiece,
+			RangeStart:  0,
+			RangeSize:   0,
+			PieceMd5:    "",
+			PieceOffset: 0,
+			PieceStyle:  0,
+		},
+	}
+}

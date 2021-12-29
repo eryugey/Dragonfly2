@@ -324,6 +324,9 @@ func (s *SchedulerService) HandlePieceResult(ctx context.Context, peer *supervis
 	} else if pieceResult.PieceInfo != nil && pieceResult.PieceInfo.PieceNum == common.ZeroOfPiece {
 		s.worker.send(startReportPieceResultEvent{ctx, peer})
 		return nil
+	} else if pieceResult.PieceInfo != nil && pieceResult.PieceInfo.PieceNum == common.QueryOfPiece {
+		s.worker.send(peerQueryPieceResultEvent{ctx, peer})
+		return nil
 	} else if pieceResult.Success {
 		s.worker.send(peerDownloadPieceSuccessEvent{
 			ctx:  ctx,

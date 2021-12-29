@@ -351,6 +351,39 @@ func (e peerLeaveEvent) hashKey() string {
 	return e.peer.Task.ID
 }
 
+type peerQueryPieceResultEvent struct {
+	ctx  context.Context
+	peer *supervisor.Peer
+}
+
+var _ event = peerQueryPieceResultEvent{}
+
+func (e peerQueryPieceResultEvent) apply(s *state) {
+	if parent, ok := e.peer.GetParent(); ok {
+		e.peer.Log().Warnf("peerQueryPieceResultEvent: no need schedule parent because peer already had parent %s", parent.ID)
+		if err := e.peer.SendSchedulePacket(constructSuccessPeerPacket(e.peer, parent, nil)); err != nil {
+			sendErrorHandler(err, s, e.peer)
+		}
+		return
+	}
+
+	parent, candidates, hasParent := s.sched.ScheduleParent(e.peer, sets.NewString())
+	// No parent node is currently available
+	if !hasParent {
+		e.peer.CloseChannelWithError(dferrors.Newf(base.Code_SchedPeerNoParent, "peer %s has no parent available for task %s", e.peer.ID, e.hashKey()))
+		logger.WithTaskAndPeerID(e.peer.Task.ID, e.peer.ID).Info("peerQueryPieceResultEvent: no parent node is available for scheduling")
+		return
+	}
+
+	if err := e.peer.SendSchedulePacket(constructSuccessPeerPacket(e.peer, parent, candidates)); err != nil {
+		sendErrorHandler(err, s, e.peer)
+	}
+}
+
+func (e peerQueryPieceResultEvent) hashKey() string {
+	return e.peer.Task.ID
+}
+
 // constructSuccessPeerPacket construct success peer schedule packet
 func constructSuccessPeerPacket(peer *supervisor.Peer, parent *supervisor.Peer, candidates []*supervisor.Peer) *schedulerRPC.PeerPacket {
 	mainPeer := &schedulerRPC.PeerPacket_DestPeer{

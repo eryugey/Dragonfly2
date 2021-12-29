@@ -27,6 +27,7 @@ import (
 
 var EndOfPiece = int32(1) << 30
 var ZeroOfPiece = int32(-1)
+var QueryOfPiece = int32(-2)
 
 // CdnSuffix represents cdn peer id suffix
 var CdnSuffix = "_CDN"

@@ -53,6 +53,7 @@ enum Code{
   SchedPeerNotFound = 5004; // peer not found in scheduler
   SchedPeerPieceResultReportFail = 5005; // report piece
   SchedTaskStatusError = 5006; // task status is fail
+  SchedPeerNoParent = 5007; // peer has no parent
 
   // cdnsystem response error 6000-6999
   CDNError = 6000;
@@ -115,7 +116,8 @@ message PieceTaskRequest{
 }
 
 message PieceInfo{
-  // piece_num < 0 represent start report piece flag
+  // piece_num == -1 represent start report piece flag
+  // piece_num == -2 represent query piece flag
   int32 piece_num = 1;
   uint64 range_start = 2 [(validate.rules).uint64.gte = 0];
   uint32 range_size = 3 [(validate.rules).uint32.gte = 0];
