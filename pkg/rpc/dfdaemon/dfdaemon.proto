@@ -64,3 +64,19 @@ service Daemon{
   // Check daemon health
   rpc CheckHealth(google.protobuf.Empty)returns(google.protobuf.Empty);
 }
+
+message StatRequest{
+  string task_id = 1 [(validate.rules).string.min_len = 1];
+}
+
+message StatResult{
+  string path = 1 [(validate.rules).string.min_len = 1];
+}
+
+// Cache Client RPC Service in Daemon
+service Cache{
+  // Check the given task exists in local cache or not
+  rpc StatFile(StatRequest) returns(stream StatResult);
+  // Add file into local cache
+  //rpc RegisterFile(RegisterFileRequest) returns(google.protobuf.Empty);
+}
