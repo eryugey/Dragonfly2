@@ -73,6 +73,7 @@ type StoreRequest struct {
 	CommonTaskRequest
 	MetadataOnly bool
 	StoreOnly    bool
+	AddToStorage bool
 	TotalPieces  int32
 }
 

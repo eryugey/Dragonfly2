@@ -281,21 +281,29 @@ func (t *localTaskStore) Store(ctx context.Context, req *StoreRequest) error {
 	if req.MetadataOnly {
 		return nil
 	}
-	_, err := os.Stat(req.Destination)
+
+	src := t.DataFilePath
+	dst := req.Destination
+	// If requested to add to storage, req.Destination is source, which will be added to storage
+	if req.AddToStorage {
+		src = dst
+		dst = t.DataFilePath
+	}
+	_, err := os.Stat(dst)
 	if err == nil {
 		// remove exist file
-		t.Infof("destination file %q exists, purge it first", req.Destination)
-		os.Remove(req.Destination)
+		t.Infof("destination file %q exists, purge it first", dst)
+		os.Remove(dst)
 	}
 	// 1. try to link
-	err = os.Link(t.DataFilePath, req.Destination)
+	err = os.Link(src, dst)
 	if err == nil {
-		t.Infof("task data link to file %q success", req.Destination)
+		t.Infof("task data link to file %q success", dst)
 		return nil
 	}
-	t.Warnf("task data link to file %q error: %s", req.Destination, err)
+	t.Warnf("task data link to file %q error: %s", dst, err)
 	// 2. link failed, copy it
-	file, err := os.Open(t.DataFilePath)
+	file, err := os.Open(src)
 	if err != nil {
 		t.Debugf("open tasks data error: %s", err)
 		return err
@@ -307,7 +315,7 @@ func (t *localTaskStore) Store(ctx context.Context, req *StoreRequest) error {
 		t.Debugf("task seek file error: %s", err)
 		return err
 	}
-	dstFile, err := os.OpenFile(req.Destination, os.O_CREATE|os.O_RDWR|os.O_TRUNC, defaultFileMode)
+	dstFile, err := os.OpenFile(dst, os.O_CREATE|os.O_RDWR|os.O_TRUNC, defaultFileMode)
 	if err != nil {
 		t.Errorf("open tasks destination file error: %s", err)
 		return err
