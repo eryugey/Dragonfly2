@@ -80,7 +80,7 @@ message RegisterFileRequest{
 // Cache Client RPC Service in Daemon
 service Cache{
   // Check the given task exists in local cache or not
-  rpc StatFile(StatRequest) returns(stream StatResult);
+  rpc StatFile(StatRequest) returns(StatResult);
   // Add file into local cache
   rpc RegisterFile(RegisterFileRequest) returns(google.protobuf.Empty);
 }
