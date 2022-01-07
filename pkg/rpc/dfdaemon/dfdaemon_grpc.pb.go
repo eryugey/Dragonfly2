@@ -207,3 +207,118 @@ var Daemon_ServiceDesc = grpc.ServiceDesc{
 	},
 	Metadata: "pkg/rpc/dfdaemon/dfdaemon.proto",
 }
+
+// CacheClient is the client API for Cache service.
+//
+// For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
+type CacheClient interface {
+	// Check the given task exists in local cache or not
+	StatFile(ctx context.Context, in *StatRequest, opts ...grpc.CallOption) (Cache_StatFileClient, error)
+}
+
+type cacheClient struct {
+	cc grpc.ClientConnInterface
+}
+
+func NewCacheClient(cc grpc.ClientConnInterface) CacheClient {
+	return &cacheClient{cc}
+}
+
+func (c *cacheClient) StatFile(ctx context.Context, in *StatRequest, opts ...grpc.CallOption) (Cache_StatFileClient, error) {
+	stream, err := c.cc.NewStream(ctx, &Cache_ServiceDesc.Streams[0], "/dfdaemon.Cache/StatFile", opts...)
+	if err != nil {
+		return nil, err
+	}
+	x := &cacheStatFileClient{stream}
+	if err := x.ClientStream.SendMsg(in); err != nil {
+		return nil, err
+	}
+	if err := x.ClientStream.CloseSend(); err != nil {
+		return nil, err
+	}
+	return x, nil
+}
+
+type Cache_StatFileClient interface {
+	Recv() (*StatResult, error)
+	grpc.ClientStream
+}
+
+type cacheStatFileClient struct {
+	grpc.ClientStream
+}
+
+func (x *cacheStatFileClient) Recv() (*StatResult, error) {
+	m := new(StatResult)
+	if err := x.ClientStream.RecvMsg(m); err != nil {
+		return nil, err
+	}
+	return m, nil
+}
+
+// CacheServer is the server API for Cache service.
+// All implementations must embed UnimplementedCacheServer
+// for forward compatibility
+type CacheServer interface {
+	// Check the given task exists in local cache or not
+	StatFile(*StatRequest, Cache_StatFileServer) error
+	mustEmbedUnimplementedCacheServer()
+}
+
+// UnimplementedCacheServer must be embedded to have forward compatible implementations.
+type UnimplementedCacheServer struct {
+}
+
+func (UnimplementedCacheServer) StatFile(*StatRequest, Cache_StatFileServer) error {
+	return status.Errorf(codes.Unimplemented, "method StatFile not implemented")
+}
+func (UnimplementedCacheServer) mustEmbedUnimplementedCacheServer() {}
+
+// UnsafeCacheServer may be embedded to opt out of forward compatibility for this service.
+// Use of this interface is not recommended, as added methods to CacheServer will
+// result in compilation errors.
+type UnsafeCacheServer interface {
+	mustEmbedUnimplementedCacheServer()
+}
+
+func RegisterCacheServer(s grpc.ServiceRegistrar, srv CacheServer) {
+	s.RegisterService(&Cache_ServiceDesc, srv)
+}
+
+func _Cache_StatFile_Handler(srv interface{}, stream grpc.ServerStream) error {
+	m := new(StatRequest)
+	if err := stream.RecvMsg(m); err != nil {
+		return err
+	}
+	return srv.(CacheServer).StatFile(m, &cacheStatFileServer{stream})
+}
+
+type Cache_StatFileServer interface {
+	Send(*StatResult) error
+	grpc.ServerStream
+}
+
+type cacheStatFileServer struct {
+	grpc.ServerStream
+}
+
+func (x *cacheStatFileServer) Send(m *StatResult) error {
+	return x.ServerStream.SendMsg(m)
+}
+
+// Cache_ServiceDesc is the grpc.ServiceDesc for Cache service.
+// It's only intended for direct use with grpc.RegisterService,
+// and not to be introspected or modified (even as a copy)
+var Cache_ServiceDesc = grpc.ServiceDesc{
+	ServiceName: "dfdaemon.Cache",
+	HandlerType: (*CacheServer)(nil),
+	Methods:     []grpc.MethodDesc{},
+	Streams: []grpc.StreamDesc{
+		{
+			StreamName:    "StatFile",
+			Handler:       _Cache_StatFile_Handler,
+			ServerStreams: true,
+		},
+	},
+	Metadata: "pkg/rpc/dfdaemon/dfdaemon.proto",
+}

@@ -272,3 +272,146 @@ var _ interface {
 	Cause() error
 	ErrorName() string
 } = DownResultValidationError{}
+
+// Validate checks the field values on StatRequest with the rules defined in
+// the proto definition for this message. If any rules are violated, an error
+// is returned.
+func (m *StatRequest) Validate() error {
+	if m == nil {
+		return nil
+	}
+
+	if utf8.RuneCountInString(m.GetTaskId()) < 1 {
+		return StatRequestValidationError{
+			field:  "TaskId",
+			reason: "value length must be at least 1 runes",
+		}
+	}
+
+	return nil
+}
+
+// StatRequestValidationError is the validation error returned by
+// StatRequest.Validate if the designated constraints aren't met.
+type StatRequestValidationError struct {
+	field  string
+	reason string
+	cause  error
+	key    bool
+}
+
+// Field function returns field value.
+func (e StatRequestValidationError) Field() string { return e.field }
+
+// Reason function returns reason value.
+func (e StatRequestValidationError) Reason() string { return e.reason }
+
+// Cause function returns cause value.
+func (e StatRequestValidationError) Cause() error { return e.cause }
+
+// Key function returns key value.
+func (e StatRequestValidationError) Key() bool { return e.key }
+
+// ErrorName returns error name.
+func (e StatRequestValidationError) ErrorName() string { return "StatRequestValidationError" }
+
+// Error satisfies the builtin error interface
+func (e StatRequestValidationError) Error() string {
+	cause := ""
+	if e.cause != nil {
+		cause = fmt.Sprintf(" | caused by: %v", e.cause)
+	}
+
+	key := ""
+	if e.key {
+		key = "key for "
+	}
+
+	return fmt.Sprintf(
+		"invalid %sStatRequest.%s: %s%s",
+		key,
+		e.field,
+		e.reason,
+		cause)
+}
+
+var _ error = StatRequestValidationError{}
+
+var _ interface {
+	Field() string
+	Reason() string
+	Key() bool
+	Cause() error
+	ErrorName() string
+} = StatRequestValidationError{}
+
+// Validate checks the field values on StatResult with the rules defined in the
+// proto definition for this message. If any rules are violated, an error is returned.
+func (m *StatResult) Validate() error {
+	if m == nil {
+		return nil
+	}
+
+	if utf8.RuneCountInString(m.GetPath()) < 1 {
+		return StatResultValidationError{
+			field:  "Path",
+			reason: "value length must be at least 1 runes",
+		}
+	}
+
+	return nil
+}
+
+// StatResultValidationError is the validation error returned by
+// StatResult.Validate if the designated constraints aren't met.
+type StatResultValidationError struct {
+	field  string
+	reason string
+	cause  error
+	key    bool
+}
+
+// Field function returns field value.
+func (e StatResultValidationError) Field() string { return e.field }
+
+// Reason function returns reason value.
+func (e StatResultValidationError) Reason() string { return e.reason }
+
+// Cause function returns cause value.
+func (e StatResultValidationError) Cause() error { return e.cause }
+
+// Key function returns key value.
+func (e StatResultValidationError) Key() bool { return e.key }
+
+// ErrorName returns error name.
+func (e StatResultValidationError) ErrorName() string { return "StatResultValidationError" }
+
+// Error satisfies the builtin error interface
+func (e StatResultValidationError) Error() string {
+	cause := ""
+	if e.cause != nil {
+		cause = fmt.Sprintf(" | caused by: %v", e.cause)
+	}
+
+	key := ""
+	if e.key {
+		key = "key for "
+	}
+
+	return fmt.Sprintf(
+		"invalid %sStatResult.%s: %s%s",
+		key,
+		e.field,
+		e.reason,
+		cause)
+}
+
+var _ error = StatResultValidationError{}
+
+var _ interface {
+	Field() string
+	Reason() string
+	Key() bool
+	Cause() error
+	ErrorName() string
+} = StatResultValidationError{}
