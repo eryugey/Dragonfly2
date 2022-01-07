@@ -214,6 +214,8 @@ var Daemon_ServiceDesc = grpc.ServiceDesc{
 type CacheClient interface {
 	// Check the given task exists in local cache or not
 	StatFile(ctx context.Context, in *StatRequest, opts ...grpc.CallOption) (Cache_StatFileClient, error)
+	// Add file into local cache
+	RegisterFile(ctx context.Context, in *RegisterFileRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 }
 
 type cacheClient struct {
@@ -256,12 +258,23 @@ func (x *cacheStatFileClient) Recv() (*StatResult, error) {
 	return m, nil
 }
 
+func (c *cacheClient) RegisterFile(ctx context.Context, in *RegisterFileRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+	out := new(emptypb.Empty)
+	err := c.cc.Invoke(ctx, "/dfdaemon.Cache/RegisterFile", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // CacheServer is the server API for Cache service.
 // All implementations must embed UnimplementedCacheServer
 // for forward compatibility
 type CacheServer interface {
 	// Check the given task exists in local cache or not
 	StatFile(*StatRequest, Cache_StatFileServer) error
+	// Add file into local cache
+	RegisterFile(context.Context, *RegisterFileRequest) (*emptypb.Empty, error)
 	mustEmbedUnimplementedCacheServer()
 }
 
@@ -271,6 +284,9 @@ type UnimplementedCacheServer struct {
 
 func (UnimplementedCacheServer) StatFile(*StatRequest, Cache_StatFileServer) error {
 	return status.Errorf(codes.Unimplemented, "method StatFile not implemented")
+}
+func (UnimplementedCacheServer) RegisterFile(context.Context, *RegisterFileRequest) (*emptypb.Empty, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method RegisterFile not implemented")
 }
 func (UnimplementedCacheServer) mustEmbedUnimplementedCacheServer() {}
 
@@ -306,13 +322,36 @@ func (x *cacheStatFileServer) Send(m *StatResult) error {
 	return x.ServerStream.SendMsg(m)
 }
 
+func _Cache_RegisterFile_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(RegisterFileRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CacheServer).RegisterFile(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/dfdaemon.Cache/RegisterFile",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CacheServer).RegisterFile(ctx, req.(*RegisterFileRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // Cache_ServiceDesc is the grpc.ServiceDesc for Cache service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
 var Cache_ServiceDesc = grpc.ServiceDesc{
 	ServiceName: "dfdaemon.Cache",
 	HandlerType: (*CacheServer)(nil),
-	Methods:     []grpc.MethodDesc{},
+	Methods: []grpc.MethodDesc{
+		{
+			MethodName: "RegisterFile",
+			Handler:    _Cache_RegisterFile_Handler,
+		},
+	},
 	Streams: []grpc.StreamDesc{
 		{
 			StreamName:    "StatFile",
