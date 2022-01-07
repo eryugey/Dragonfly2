@@ -213,7 +213,7 @@ var Daemon_ServiceDesc = grpc.ServiceDesc{
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type CacheClient interface {
 	// Check the given task exists in local cache or not
-	StatFile(ctx context.Context, in *StatRequest, opts ...grpc.CallOption) (*StatResult, error)
+	StatFile(ctx context.Context, in *StatFileRequest, opts ...grpc.CallOption) (*StatFileResult, error)
 	// Add file into local cache
 	RegisterFile(ctx context.Context, in *RegisterFileRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 }
@@ -226,8 +226,8 @@ func NewCacheClient(cc grpc.ClientConnInterface) CacheClient {
 	return &cacheClient{cc}
 }
 
-func (c *cacheClient) StatFile(ctx context.Context, in *StatRequest, opts ...grpc.CallOption) (*StatResult, error) {
-	out := new(StatResult)
+func (c *cacheClient) StatFile(ctx context.Context, in *StatFileRequest, opts ...grpc.CallOption) (*StatFileResult, error) {
+	out := new(StatFileResult)
 	err := c.cc.Invoke(ctx, "/dfdaemon.Cache/StatFile", in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -249,7 +249,7 @@ func (c *cacheClient) RegisterFile(ctx context.Context, in *RegisterFileRequest,
 // for forward compatibility
 type CacheServer interface {
 	// Check the given task exists in local cache or not
-	StatFile(context.Context, *StatRequest) (*StatResult, error)
+	StatFile(context.Context, *StatFileRequest) (*StatFileResult, error)
 	// Add file into local cache
 	RegisterFile(context.Context, *RegisterFileRequest) (*emptypb.Empty, error)
 	mustEmbedUnimplementedCacheServer()
@@ -259,7 +259,7 @@ type CacheServer interface {
 type UnimplementedCacheServer struct {
 }
 
-func (UnimplementedCacheServer) StatFile(context.Context, *StatRequest) (*StatResult, error) {
+func (UnimplementedCacheServer) StatFile(context.Context, *StatFileRequest) (*StatFileResult, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method StatFile not implemented")
 }
 func (UnimplementedCacheServer) RegisterFile(context.Context, *RegisterFileRequest) (*emptypb.Empty, error) {
@@ -279,7 +279,7 @@ func RegisterCacheServer(s grpc.ServiceRegistrar, srv CacheServer) {
 }
 
 func _Cache_StatFile_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(StatRequest)
+	in := new(StatFileRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -291,7 +291,7 @@ func _Cache_StatFile_Handler(srv interface{}, ctx context.Context, dec func(inte
 		FullMethod: "/dfdaemon.Cache/StatFile",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(CacheServer).StatFile(ctx, req.(*StatRequest))
+		return srv.(CacheServer).StatFile(ctx, req.(*StatFileRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }

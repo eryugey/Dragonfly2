@@ -273,16 +273,16 @@ var _ interface {
 	ErrorName() string
 } = DownResultValidationError{}
 
-// Validate checks the field values on StatRequest with the rules defined in
-// the proto definition for this message. If any rules are violated, an error
-// is returned.
-func (m *StatRequest) Validate() error {
+// Validate checks the field values on StatFileRequest with the rules defined
+// in the proto definition for this message. If any rules are violated, an
+// error is returned.
+func (m *StatFileRequest) Validate() error {
 	if m == nil {
 		return nil
 	}
 
 	if utf8.RuneCountInString(m.GetTaskId()) < 1 {
-		return StatRequestValidationError{
+		return StatFileRequestValidationError{
 			field:  "TaskId",
 			reason: "value length must be at least 1 runes",
 		}
@@ -291,9 +291,9 @@ func (m *StatRequest) Validate() error {
 	return nil
 }
 
-// StatRequestValidationError is the validation error returned by
-// StatRequest.Validate if the designated constraints aren't met.
-type StatRequestValidationError struct {
+// StatFileRequestValidationError is the validation error returned by
+// StatFileRequest.Validate if the designated constraints aren't met.
+type StatFileRequestValidationError struct {
 	field  string
 	reason string
 	cause  error
@@ -301,22 +301,22 @@ type StatRequestValidationError struct {
 }
 
 // Field function returns field value.
-func (e StatRequestValidationError) Field() string { return e.field }
+func (e StatFileRequestValidationError) Field() string { return e.field }
 
 // Reason function returns reason value.
-func (e StatRequestValidationError) Reason() string { return e.reason }
+func (e StatFileRequestValidationError) Reason() string { return e.reason }
 
 // Cause function returns cause value.
-func (e StatRequestValidationError) Cause() error { return e.cause }
+func (e StatFileRequestValidationError) Cause() error { return e.cause }
 
 // Key function returns key value.
-func (e StatRequestValidationError) Key() bool { return e.key }
+func (e StatFileRequestValidationError) Key() bool { return e.key }
 
 // ErrorName returns error name.
-func (e StatRequestValidationError) ErrorName() string { return "StatRequestValidationError" }
+func (e StatFileRequestValidationError) ErrorName() string { return "StatFileRequestValidationError" }
 
 // Error satisfies the builtin error interface
-func (e StatRequestValidationError) Error() string {
+func (e StatFileRequestValidationError) Error() string {
 	cause := ""
 	if e.cause != nil {
 		cause = fmt.Sprintf(" | caused by: %v", e.cause)
@@ -328,14 +328,14 @@ func (e StatRequestValidationError) Error() string {
 	}
 
 	return fmt.Sprintf(
-		"invalid %sStatRequest.%s: %s%s",
+		"invalid %sStatFileRequest.%s: %s%s",
 		key,
 		e.field,
 		e.reason,
 		cause)
 }
 
-var _ error = StatRequestValidationError{}
+var _ error = StatFileRequestValidationError{}
 
 var _ interface {
 	Field() string
@@ -343,17 +343,18 @@ var _ interface {
 	Key() bool
 	Cause() error
 	ErrorName() string
-} = StatRequestValidationError{}
+} = StatFileRequestValidationError{}
 
-// Validate checks the field values on StatResult with the rules defined in the
-// proto definition for this message. If any rules are violated, an error is returned.
-func (m *StatResult) Validate() error {
+// Validate checks the field values on StatFileResult with the rules defined in
+// the proto definition for this message. If any rules are violated, an error
+// is returned.
+func (m *StatFileResult) Validate() error {
 	if m == nil {
 		return nil
 	}
 
 	if utf8.RuneCountInString(m.GetPath()) < 1 {
-		return StatResultValidationError{
+		return StatFileResultValidationError{
 			field:  "Path",
 			reason: "value length must be at least 1 runes",
 		}
@@ -362,9 +363,9 @@ func (m *StatResult) Validate() error {
 	return nil
 }
 
-// StatResultValidationError is the validation error returned by
-// StatResult.Validate if the designated constraints aren't met.
-type StatResultValidationError struct {
+// StatFileResultValidationError is the validation error returned by
+// StatFileResult.Validate if the designated constraints aren't met.
+type StatFileResultValidationError struct {
 	field  string
 	reason string
 	cause  error
@@ -372,22 +373,22 @@ type StatResultValidationError struct {
 }
 
 // Field function returns field value.
-func (e StatResultValidationError) Field() string { return e.field }
+func (e StatFileResultValidationError) Field() string { return e.field }
 
 // Reason function returns reason value.
-func (e StatResultValidationError) Reason() string { return e.reason }
+func (e StatFileResultValidationError) Reason() string { return e.reason }
 
 // Cause function returns cause value.
-func (e StatResultValidationError) Cause() error { return e.cause }
+func (e StatFileResultValidationError) Cause() error { return e.cause }
 
 // Key function returns key value.
-func (e StatResultValidationError) Key() bool { return e.key }
+func (e StatFileResultValidationError) Key() bool { return e.key }
 
 // ErrorName returns error name.
-func (e StatResultValidationError) ErrorName() string { return "StatResultValidationError" }
+func (e StatFileResultValidationError) ErrorName() string { return "StatFileResultValidationError" }
 
 // Error satisfies the builtin error interface
-func (e StatResultValidationError) Error() string {
+func (e StatFileResultValidationError) Error() string {
 	cause := ""
 	if e.cause != nil {
 		cause = fmt.Sprintf(" | caused by: %v", e.cause)
@@ -399,14 +400,14 @@ func (e StatResultValidationError) Error() string {
 	}
 
 	return fmt.Sprintf(
-		"invalid %sStatResult.%s: %s%s",
+		"invalid %sStatFileResult.%s: %s%s",
 		key,
 		e.field,
 		e.reason,
 		cause)
 }
 
-var _ error = StatResultValidationError{}
+var _ error = StatFileResultValidationError{}
 
 var _ interface {
 	Field() string
@@ -414,7 +415,7 @@ var _ interface {
 	Key() bool
 	Cause() error
 	ErrorName() string
-} = StatResultValidationError{}
+} = StatFileResultValidationError{}
 
 // Validate checks the field values on RegisterFileRequest with the rules
 // defined in the proto definition for this message. If any rules are
