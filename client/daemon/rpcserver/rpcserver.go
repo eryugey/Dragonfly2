@@ -220,6 +220,7 @@ func (m *server) RegisterFile(ctx context.Context, request *dfdaemongrpc.Registe
 	taskID := TODO
 	log := logger.With("component", "cacheService", "file", file)
 
+	// get file size and compute piece size and piece count
 	stat, err := os.Stat(file)
 	if err != nil {
 		log.WithError(err).Error("stat file failed")
@@ -230,7 +231,16 @@ func (m *server) RegisterFile(ctx context.Context, request *dfdaemongrpc.Registe
 	pieceSize := util.ComputePieceSize(size)
 	maxPieceNum := util.ComputeMaxPieceNum(size, pieceSize)
 
+	commonTaskRequest := storage.CommonTaskRequest{
+			PeerID: TODO,
+			TaskID: taskID,
+	}
+
 	// 1. Register to storageManager
+	if err := m.storageManager.RegisterTask(ctx, storage.RegisterTaskRequest{
+		CommonTaskRequest: commonTaskRequest,
+	}); err != nil {
+	}
 
 	// 2. Store to storageManager
 	err = m.storageManager.Store(ctx, &storage.StoreRequest{
