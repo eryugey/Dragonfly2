@@ -45,5 +45,5 @@ func ComputePieceSize(length int64) uint32 {
 
 // TODO: comments, dedicated commit
 func ComputeMaxPieceNum(length int64, pieceSize uint32) int32 {
-	int32(math.Ceil(float64(length) / float64(pieceSize)))
+	return int32(math.Ceil(float64(length) / float64(pieceSize)))
 }

@@ -31,7 +31,6 @@ import (
 	"d7y.io/dragonfly/v2/client/daemon/peer"
 	"d7y.io/dragonfly/v2/client/daemon/storage"
 	"d7y.io/dragonfly/v2/internal/dferrors"
-	"d7y.io/dragonfly/v2/internal/util"
 	logger "d7y.io/dragonfly/v2/internal/dflog"
 	"d7y.io/dragonfly/v2/pkg/idgen"
 	"d7y.io/dragonfly/v2/pkg/rpc/base"
@@ -51,6 +50,7 @@ type server struct {
 	clientutil.KeepAlive
 	peerHost        *scheduler.PeerHost
 	peerTaskManager peer.TaskManager
+	pieceManager    peer.PieceManager
 	storageManager  storage.Manager
 
 	downloadServer *grpc.Server
@@ -58,11 +58,12 @@ type server struct {
 	uploadAddr     string
 }
 
-func New(peerHost *scheduler.PeerHost, peerTaskManager peer.TaskManager, storageManager storage.Manager, downloadOpts []grpc.ServerOption, peerOpts []grpc.ServerOption) (Server, error) {
+func New(peerHost *scheduler.PeerHost, peerTaskManager peer.TaskManager, pieceManager peer.PieceManager, storageManager storage.Manager, downloadOpts []grpc.ServerOption, peerOpts []grpc.ServerOption) (Server, error) {
 	svr := &server{
 		KeepAlive:       clientutil.NewKeepAlive("rpc server"),
 		peerHost:        peerHost,
 		peerTaskManager: peerTaskManager,
+		pieceManager:    pieceManager,
 		storageManager:  storageManager,
 	}
 	svr.downloadServer = dfdaemonserver.New(svr, downloadOpts...)
@@ -215,47 +216,33 @@ func (m *server) Download(ctx context.Context,
 	}
 }
 
-func (m *server) RegisterFile(ctx context.Context, request *dfdaemongrpc.RegisterFileRequest) error {
-	file := request.Path
-	taskID := TODO
-	log := logger.With("component", "cacheService", "file", file)
-
-	// get file size and compute piece size and piece count
-	stat, err := os.Stat(file)
-	if err != nil {
-		log.WithError(err).Error("stat file failed")
-		return err
-	}
-	size := stat.Size()
-	// TODO: use pieceManager.computePieceSize
-	pieceSize := util.ComputePieceSize(size)
-	maxPieceNum := util.ComputeMaxPieceNum(size, pieceSize)
-
-	commonTaskRequest := storage.CommonTaskRequest{
-			PeerID: TODO,
-			TaskID: taskID,
-	}
+func (m *server) ImportTask(ctx context.Context, req *dfdaemongrpc.ImportTaskRequest) error {
+	peerID := idgen.PeerID(m.peerHost.Ip)
+	taskID := idgen.TaskID(req.Url, req.UrlMeta)
+	log := logger.With("component", "cacheService", "file", req.Path, "taskID", taskID)
 
 	// 1. Register to storageManager
 	if err := m.storageManager.RegisterTask(ctx, storage.RegisterTaskRequest{
-		CommonTaskRequest: commonTaskRequest,
+		CommonTaskRequest: storage.CommonTaskRequest{
+			PeerID: peerID,
+			TaskID: taskID,
+		},
 	}); err != nil {
+		log.Errorf("register task to storage manager failed: %v", err)
+		return err
 	}
 
-	// 2. Store to storageManager
-	err = m.storageManager.Store(ctx, &storage.StoreRequest{
-		CommonTaskRequest: storage.CommonTaskRequest{
-			PeerID:      TODO,
-			TaskID:      taskID,
-			Destination: file,
-		},
-		AddToStorage: true,
-		TotalPieces:  maxPieceNum,
-	})
-	if err != nil {
-		log.WithError(err).Errorf("register file failed, taskID %s", taskID)
-	} else {
-		log.Infof("register file succeeded, taskID %s", taskID)
+	// 2. Import task file
+	ptm := storage.PeerTaskMetadata{
+		PeerID: peerID,
+		TaskID: taskID,
 	}
-	return err
+	if err := m.pieceManager.ImportSource(ctx, ptm, req); err != nil {
+		log.Errorf("import file failed, taskID %s: %v", taskID, err)
+	} else {
+		log.Infof("import file succeeded, taskID %s", taskID)
+	}
+
+	// 3. Register to scheduler asynchronously
+	return nil
 }

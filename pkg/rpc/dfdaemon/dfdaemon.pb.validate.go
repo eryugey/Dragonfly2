@@ -273,16 +273,16 @@ var _ interface {
 	ErrorName() string
 } = DownResultValidationError{}
 
-// Validate checks the field values on StatFileRequest with the rules defined
+// Validate checks the field values on StatTaskRequest with the rules defined
 // in the proto definition for this message. If any rules are violated, an
 // error is returned.
-func (m *StatFileRequest) Validate() error {
+func (m *StatTaskRequest) Validate() error {
 	if m == nil {
 		return nil
 	}
 
 	if utf8.RuneCountInString(m.GetTaskId()) < 1 {
-		return StatFileRequestValidationError{
+		return StatTaskRequestValidationError{
 			field:  "TaskId",
 			reason: "value length must be at least 1 runes",
 		}
@@ -291,9 +291,9 @@ func (m *StatFileRequest) Validate() error {
 	return nil
 }
 
-// StatFileRequestValidationError is the validation error returned by
-// StatFileRequest.Validate if the designated constraints aren't met.
-type StatFileRequestValidationError struct {
+// StatTaskRequestValidationError is the validation error returned by
+// StatTaskRequest.Validate if the designated constraints aren't met.
+type StatTaskRequestValidationError struct {
 	field  string
 	reason string
 	cause  error
@@ -301,22 +301,22 @@ type StatFileRequestValidationError struct {
 }
 
 // Field function returns field value.
-func (e StatFileRequestValidationError) Field() string { return e.field }
+func (e StatTaskRequestValidationError) Field() string { return e.field }
 
 // Reason function returns reason value.
-func (e StatFileRequestValidationError) Reason() string { return e.reason }
+func (e StatTaskRequestValidationError) Reason() string { return e.reason }
 
 // Cause function returns cause value.
-func (e StatFileRequestValidationError) Cause() error { return e.cause }
+func (e StatTaskRequestValidationError) Cause() error { return e.cause }
 
 // Key function returns key value.
-func (e StatFileRequestValidationError) Key() bool { return e.key }
+func (e StatTaskRequestValidationError) Key() bool { return e.key }
 
 // ErrorName returns error name.
-func (e StatFileRequestValidationError) ErrorName() string { return "StatFileRequestValidationError" }
+func (e StatTaskRequestValidationError) ErrorName() string { return "StatTaskRequestValidationError" }
 
 // Error satisfies the builtin error interface
-func (e StatFileRequestValidationError) Error() string {
+func (e StatTaskRequestValidationError) Error() string {
 	cause := ""
 	if e.cause != nil {
 		cause = fmt.Sprintf(" | caused by: %v", e.cause)
@@ -328,14 +328,14 @@ func (e StatFileRequestValidationError) Error() string {
 	}
 
 	return fmt.Sprintf(
-		"invalid %sStatFileRequest.%s: %s%s",
+		"invalid %sStatTaskRequest.%s: %s%s",
 		key,
 		e.field,
 		e.reason,
 		cause)
 }
 
-var _ error = StatFileRequestValidationError{}
+var _ error = StatTaskRequestValidationError{}
 
 var _ interface {
 	Field() string
@@ -343,18 +343,18 @@ var _ interface {
 	Key() bool
 	Cause() error
 	ErrorName() string
-} = StatFileRequestValidationError{}
+} = StatTaskRequestValidationError{}
 
-// Validate checks the field values on StatFileResult with the rules defined in
+// Validate checks the field values on StatTaskResult with the rules defined in
 // the proto definition for this message. If any rules are violated, an error
 // is returned.
-func (m *StatFileResult) Validate() error {
+func (m *StatTaskResult) Validate() error {
 	if m == nil {
 		return nil
 	}
 
 	if utf8.RuneCountInString(m.GetPath()) < 1 {
-		return StatFileResultValidationError{
+		return StatTaskResultValidationError{
 			field:  "Path",
 			reason: "value length must be at least 1 runes",
 		}
@@ -363,9 +363,9 @@ func (m *StatFileResult) Validate() error {
 	return nil
 }
 
-// StatFileResultValidationError is the validation error returned by
-// StatFileResult.Validate if the designated constraints aren't met.
-type StatFileResultValidationError struct {
+// StatTaskResultValidationError is the validation error returned by
+// StatTaskResult.Validate if the designated constraints aren't met.
+type StatTaskResultValidationError struct {
 	field  string
 	reason string
 	cause  error
@@ -373,22 +373,22 @@ type StatFileResultValidationError struct {
 }
 
 // Field function returns field value.
-func (e StatFileResultValidationError) Field() string { return e.field }
+func (e StatTaskResultValidationError) Field() string { return e.field }
 
 // Reason function returns reason value.
-func (e StatFileResultValidationError) Reason() string { return e.reason }
+func (e StatTaskResultValidationError) Reason() string { return e.reason }
 
 // Cause function returns cause value.
-func (e StatFileResultValidationError) Cause() error { return e.cause }
+func (e StatTaskResultValidationError) Cause() error { return e.cause }
 
 // Key function returns key value.
-func (e StatFileResultValidationError) Key() bool { return e.key }
+func (e StatTaskResultValidationError) Key() bool { return e.key }
 
 // ErrorName returns error name.
-func (e StatFileResultValidationError) ErrorName() string { return "StatFileResultValidationError" }
+func (e StatTaskResultValidationError) ErrorName() string { return "StatTaskResultValidationError" }
 
 // Error satisfies the builtin error interface
-func (e StatFileResultValidationError) Error() string {
+func (e StatTaskResultValidationError) Error() string {
 	cause := ""
 	if e.cause != nil {
 		cause = fmt.Sprintf(" | caused by: %v", e.cause)
@@ -400,14 +400,14 @@ func (e StatFileResultValidationError) Error() string {
 	}
 
 	return fmt.Sprintf(
-		"invalid %sStatFileResult.%s: %s%s",
+		"invalid %sStatTaskResult.%s: %s%s",
 		key,
 		e.field,
 		e.reason,
 		cause)
 }
 
-var _ error = StatFileResultValidationError{}
+var _ error = StatTaskResultValidationError{}
 
 var _ interface {
 	Field() string
@@ -415,18 +415,18 @@ var _ interface {
 	Key() bool
 	Cause() error
 	ErrorName() string
-} = StatFileResultValidationError{}
+} = StatTaskResultValidationError{}
 
-// Validate checks the field values on RegisterFileRequest with the rules
-// defined in the proto definition for this message. If any rules are
-// violated, an error is returned.
-func (m *RegisterFileRequest) Validate() error {
+// Validate checks the field values on ImportTaskRequest with the rules defined
+// in the proto definition for this message. If any rules are violated, an
+// error is returned.
+func (m *ImportTaskRequest) Validate() error {
 	if m == nil {
 		return nil
 	}
 
 	if utf8.RuneCountInString(m.GetUrl()) < 1 {
-		return RegisterFileRequestValidationError{
+		return ImportTaskRequestValidationError{
 			field:  "Url",
 			reason: "value length must be at least 1 runes",
 		}
@@ -434,7 +434,7 @@ func (m *RegisterFileRequest) Validate() error {
 
 	if v, ok := interface{}(m.GetUrlMeta()).(interface{ Validate() error }); ok {
 		if err := v.Validate(); err != nil {
-			return RegisterFileRequestValidationError{
+			return ImportTaskRequestValidationError{
 				field:  "UrlMeta",
 				reason: "embedded message failed validation",
 				cause:  err,
@@ -443,7 +443,7 @@ func (m *RegisterFileRequest) Validate() error {
 	}
 
 	if utf8.RuneCountInString(m.GetPath()) < 1 {
-		return RegisterFileRequestValidationError{
+		return ImportTaskRequestValidationError{
 			field:  "Path",
 			reason: "value length must be at least 1 runes",
 		}
@@ -452,9 +452,9 @@ func (m *RegisterFileRequest) Validate() error {
 	return nil
 }
 
-// RegisterFileRequestValidationError is the validation error returned by
-// RegisterFileRequest.Validate if the designated constraints aren't met.
-type RegisterFileRequestValidationError struct {
+// ImportTaskRequestValidationError is the validation error returned by
+// ImportTaskRequest.Validate if the designated constraints aren't met.
+type ImportTaskRequestValidationError struct {
 	field  string
 	reason string
 	cause  error
@@ -462,24 +462,24 @@ type RegisterFileRequestValidationError struct {
 }
 
 // Field function returns field value.
-func (e RegisterFileRequestValidationError) Field() string { return e.field }
+func (e ImportTaskRequestValidationError) Field() string { return e.field }
 
 // Reason function returns reason value.
-func (e RegisterFileRequestValidationError) Reason() string { return e.reason }
+func (e ImportTaskRequestValidationError) Reason() string { return e.reason }
 
 // Cause function returns cause value.
-func (e RegisterFileRequestValidationError) Cause() error { return e.cause }
+func (e ImportTaskRequestValidationError) Cause() error { return e.cause }
 
 // Key function returns key value.
-func (e RegisterFileRequestValidationError) Key() bool { return e.key }
+func (e ImportTaskRequestValidationError) Key() bool { return e.key }
 
 // ErrorName returns error name.
-func (e RegisterFileRequestValidationError) ErrorName() string {
-	return "RegisterFileRequestValidationError"
+func (e ImportTaskRequestValidationError) ErrorName() string {
+	return "ImportTaskRequestValidationError"
 }
 
 // Error satisfies the builtin error interface
-func (e RegisterFileRequestValidationError) Error() string {
+func (e ImportTaskRequestValidationError) Error() string {
 	cause := ""
 	if e.cause != nil {
 		cause = fmt.Sprintf(" | caused by: %v", e.cause)
@@ -491,14 +491,14 @@ func (e RegisterFileRequestValidationError) Error() string {
 	}
 
 	return fmt.Sprintf(
-		"invalid %sRegisterFileRequest.%s: %s%s",
+		"invalid %sImportTaskRequest.%s: %s%s",
 		key,
 		e.field,
 		e.reason,
 		cause)
 }
 
-var _ error = RegisterFileRequestValidationError{}
+var _ error = ImportTaskRequestValidationError{}
 
 var _ interface {
 	Field() string
@@ -506,4 +506,4 @@ var _ interface {
 	Key() bool
 	Cause() error
 	ErrorName() string
-} = RegisterFileRequestValidationError{}
+} = ImportTaskRequestValidationError{}

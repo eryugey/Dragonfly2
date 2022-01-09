@@ -65,15 +65,15 @@ service Daemon{
   rpc CheckHealth(google.protobuf.Empty)returns(google.protobuf.Empty);
 }
 
-message StatFileRequest{
+message StatTaskRequest{
   string task_id = 1 [(validate.rules).string.min_len = 1];
 }
 
-message StatFileResult{
+message StatTaskResult{
   string path = 1 [(validate.rules).string.min_len = 1];
 }
 
-message RegisterFileRequest{
+message ImportTaskRequest{
   string url = 1 [(validate.rules).string.min_len = 1];
   base.UrlMeta url_meta = 2;
   string path = 3 [(validate.rules).string.min_len = 1];
@@ -82,7 +82,7 @@ message RegisterFileRequest{
 // Cache Client RPC Service in Daemon
 service Cache{
   // Check the given task exists in local cache or not
-  rpc StatFile(StatFileRequest) returns(StatFileResult);
+  rpc StatTask(StatTaskRequest) returns(StatTaskResult);
   // Add file into local cache
-  rpc RegisterFile(RegisterFileRequest) returns(google.protobuf.Empty);
+  rpc ImportTask(ImportTaskRequest) returns(google.protobuf.Empty);
 }

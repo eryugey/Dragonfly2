@@ -191,7 +191,7 @@ func New(opt *config.DaemonOption, d dfpath.Dfpath) (Daemon, error) {
 		}
 		peerServerOption = append(peerServerOption, grpc.Creds(tlsCredentials))
 	}
-	rpcManager, err := rpcserver.New(host, peerTaskManager, storageManager, downloadServerOption, peerServerOption)
+	rpcManager, err := rpcserver.New(host, peerTaskManager, pieceManager, storageManager, downloadServerOption, peerServerOption)
 	if err != nil {
 		return nil, err
 	}

@@ -213,9 +213,9 @@ var Daemon_ServiceDesc = grpc.ServiceDesc{
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type CacheClient interface {
 	// Check the given task exists in local cache or not
-	StatFile(ctx context.Context, in *StatFileRequest, opts ...grpc.CallOption) (*StatFileResult, error)
+	StatTask(ctx context.Context, in *StatTaskRequest, opts ...grpc.CallOption) (*StatTaskResult, error)
 	// Add file into local cache
-	RegisterFile(ctx context.Context, in *RegisterFileRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	ImportTask(ctx context.Context, in *ImportTaskRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 }
 
 type cacheClient struct {
@@ -226,18 +226,18 @@ func NewCacheClient(cc grpc.ClientConnInterface) CacheClient {
 	return &cacheClient{cc}
 }
 
-func (c *cacheClient) StatFile(ctx context.Context, in *StatFileRequest, opts ...grpc.CallOption) (*StatFileResult, error) {
-	out := new(StatFileResult)
-	err := c.cc.Invoke(ctx, "/dfdaemon.Cache/StatFile", in, out, opts...)
+func (c *cacheClient) StatTask(ctx context.Context, in *StatTaskRequest, opts ...grpc.CallOption) (*StatTaskResult, error) {
+	out := new(StatTaskResult)
+	err := c.cc.Invoke(ctx, "/dfdaemon.Cache/StatTask", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *cacheClient) RegisterFile(ctx context.Context, in *RegisterFileRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+func (c *cacheClient) ImportTask(ctx context.Context, in *ImportTaskRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
 	out := new(emptypb.Empty)
-	err := c.cc.Invoke(ctx, "/dfdaemon.Cache/RegisterFile", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/dfdaemon.Cache/ImportTask", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -249,9 +249,9 @@ func (c *cacheClient) RegisterFile(ctx context.Context, in *RegisterFileRequest,
 // for forward compatibility
 type CacheServer interface {
 	// Check the given task exists in local cache or not
-	StatFile(context.Context, *StatFileRequest) (*StatFileResult, error)
+	StatTask(context.Context, *StatTaskRequest) (*StatTaskResult, error)
 	// Add file into local cache
-	RegisterFile(context.Context, *RegisterFileRequest) (*emptypb.Empty, error)
+	ImportTask(context.Context, *ImportTaskRequest) (*emptypb.Empty, error)
 	mustEmbedUnimplementedCacheServer()
 }
 
@@ -259,11 +259,11 @@ type CacheServer interface {
 type UnimplementedCacheServer struct {
 }
 
-func (UnimplementedCacheServer) StatFile(context.Context, *StatFileRequest) (*StatFileResult, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method StatFile not implemented")
+func (UnimplementedCacheServer) StatTask(context.Context, *StatTaskRequest) (*StatTaskResult, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method StatTask not implemented")
 }
-func (UnimplementedCacheServer) RegisterFile(context.Context, *RegisterFileRequest) (*emptypb.Empty, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method RegisterFile not implemented")
+func (UnimplementedCacheServer) ImportTask(context.Context, *ImportTaskRequest) (*emptypb.Empty, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ImportTask not implemented")
 }
 func (UnimplementedCacheServer) mustEmbedUnimplementedCacheServer() {}
 
@@ -278,38 +278,38 @@ func RegisterCacheServer(s grpc.ServiceRegistrar, srv CacheServer) {
 	s.RegisterService(&Cache_ServiceDesc, srv)
 }
 
-func _Cache_StatFile_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(StatFileRequest)
+func _Cache_StatTask_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(StatTaskRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(CacheServer).StatFile(ctx, in)
+		return srv.(CacheServer).StatTask(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/dfdaemon.Cache/StatFile",
+		FullMethod: "/dfdaemon.Cache/StatTask",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(CacheServer).StatFile(ctx, req.(*StatFileRequest))
+		return srv.(CacheServer).StatTask(ctx, req.(*StatTaskRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _Cache_RegisterFile_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(RegisterFileRequest)
+func _Cache_ImportTask_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ImportTaskRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(CacheServer).RegisterFile(ctx, in)
+		return srv.(CacheServer).ImportTask(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/dfdaemon.Cache/RegisterFile",
+		FullMethod: "/dfdaemon.Cache/ImportTask",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(CacheServer).RegisterFile(ctx, req.(*RegisterFileRequest))
+		return srv.(CacheServer).ImportTask(ctx, req.(*ImportTaskRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -322,12 +322,12 @@ var Cache_ServiceDesc = grpc.ServiceDesc{
 	HandlerType: (*CacheServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
-			MethodName: "StatFile",
-			Handler:    _Cache_StatFile_Handler,
+			MethodName: "StatTask",
+			Handler:    _Cache_StatTask_Handler,
 		},
 		{
-			MethodName: "RegisterFile",
-			Handler:    _Cache_RegisterFile_Handler,
+			MethodName: "ImportTask",
+			Handler:    _Cache_ImportTask_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

@@ -22,6 +22,7 @@ import (
 	"math"
 	"net"
 	"net/http"
+	"os"
 	"time"
 
 	"golang.org/x/time/rate"
@@ -32,6 +33,7 @@ import (
 	logger "d7y.io/dragonfly/v2/internal/dflog"
 	"d7y.io/dragonfly/v2/internal/util"
 	"d7y.io/dragonfly/v2/pkg/rpc/base"
+	dfdaemongrpc "d7y.io/dragonfly/v2/pkg/rpc/dfdaemon"
 	"d7y.io/dragonfly/v2/pkg/rpc/scheduler"
 	"d7y.io/dragonfly/v2/pkg/source"
 	"d7y.io/dragonfly/v2/pkg/util/digestutils"
@@ -39,6 +41,7 @@ import (
 
 type PieceManager interface {
 	DownloadSource(ctx context.Context, pt Task, request *scheduler.PeerTaskRequest) error
+	ImportSource(ctx context.Context, ptm storage.PeerTaskMetadata, req *dfdaemongrpc.ImportTaskRequest) error
 	DownloadPiece(ctx context.Context, peerTask Task, request *DownloadPieceRequest) bool
 	ReadPiece(ctx context.Context, req *storage.ReadPieceRequest) (io.Reader, io.Closer, error)
 }
@@ -244,6 +247,40 @@ func (pm *pieceManager) pushFailResult(peerTask Task, dstPid string, piece *base
 
 func (pm *pieceManager) ReadPiece(ctx context.Context, req *storage.ReadPieceRequest) (io.Reader, io.Closer, error) {
 	return pm.storageManager.ReadPiece(ctx, req)
+}
+
+func (pm *pieceManager) processPieceFromFile(ctx context.Context, ptm storage.PeerTaskMetadata, r io.Reader, pieceNum int32, pieceOffset uint64, pieceSize uint32) (int64, error) {
+	var (
+		n      int64
+		reader = r
+		log    = logger.With("function", "processPieceFromFile", "taskID", ptm.TaskID)
+	)
+
+	if pm.calculateDigest {
+		logger.Debugf("calculate digest in processPieceFromFile")
+		reader = digestutils.NewDigestReader(log, r)
+	}
+	n, err := pm.storageManager.WritePiece(ctx,
+		&storage.WritePieceRequest{
+			UnknownLength:    false,
+			PeerTaskMetadata: ptm,
+			PieceMetadata: storage.PieceMetadata{
+				Num: pieceNum,
+				// storage manager will get digest from DigestReader, keep empty here is ok
+				Md5:    "",
+				Offset: pieceOffset,
+				Range: clientutil.Range{
+					Start:  int64(pieceOffset),
+					Length: int64(pieceSize),
+				},
+			},
+			Reader: reader,
+		})
+	if err != nil {
+		logger.Errorf("put piece of task %s to storage failed, piece num: %d, wrote: %d, error: %s", ptm.TaskID, pieceNum, n, err)
+		return n, err
+	}
+	return n, nil
 }
 
 // callback will be invoked before report result, it's useful to update some metadata before a peer task finished.
@@ -490,5 +527,58 @@ func (pm *pieceManager) downloadUnknownLengthSource(ctx context.Context, pt Task
 	}
 
 	log.Infof("download from source ok")
+	return nil
+}
+
+func (pm *pieceManager) ImportSource(ctx context.Context, ptm storage.PeerTaskMetadata, req *dfdaemongrpc.ImportTaskRequest) error {
+	// get file size and compute piece size and piece count
+	stat, err := os.Stat(req.Path)
+	if err != nil {
+		logger.Errorf("stat file %s failed: %v", req.Path, err)
+		return err
+	}
+	contentLength := stat.Size()
+	pieceSize := pm.computePieceSize(contentLength)
+	maxPieceNum := util.ComputeMaxPieceNum(contentLength, pieceSize)
+
+	file, err := os.Open(req.Path)
+	if err != nil {
+		logger.Errorf("open file %s failed: %v", req.Path, err)
+		return err
+	}
+	defer file.Close()
+
+	reader := file
+	for pieceNum := int32(0); pieceNum < maxPieceNum; pieceNum++ {
+		size := pieceSize
+		offset := uint64(pieceNum) * uint64(pieceSize)
+		// calculate piece size for last piece
+		if contentLength > 0 && int64(offset)+int64(size) > contentLength {
+			size = uint32(contentLength - int64(offset))
+		}
+
+		logger.Debugf("import piece %d", pieceNum)
+		n, er := pm.processPieceFromFile(ctx, ptm, reader, pieceNum, offset, size)
+		if er != nil {
+			logger.Errorf("import piece %d of task %s error: %s", pieceNum, ptm.TaskID, er)
+			return er
+		}
+		if n != int64(size) {
+			logger.Errorf("import piece %d of task %s size not match, desired: %d, actual: %d", pieceNum, ptm.TaskID, size, n)
+			return storage.ErrShortRead
+		}
+	}
+
+	err = pm.storageManager.UpdateTask(ctx, &storage.UpdateTaskRequest{
+		PeerTaskMetadata: ptm,
+		ContentLength:    contentLength,
+		TotalPieces:      maxPieceNum,
+		GenPieceDigest:   true,
+	})
+	if err != nil {
+		logger.Errorf("update task(%s) failed: %v", ptm.TaskID, err)
+	}
+	// TODO: Store() with MetadataOnly to set t.Done = true
+
 	return nil
 }
