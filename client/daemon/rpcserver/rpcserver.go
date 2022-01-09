@@ -31,6 +31,7 @@ import (
 	"d7y.io/dragonfly/v2/client/daemon/peer"
 	"d7y.io/dragonfly/v2/client/daemon/storage"
 	"d7y.io/dragonfly/v2/internal/dferrors"
+	"d7y.io/dragonfly/v2/internal/util"
 	logger "d7y.io/dragonfly/v2/internal/dflog"
 	"d7y.io/dragonfly/v2/pkg/idgen"
 	"d7y.io/dragonfly/v2/pkg/rpc/base"
@@ -212,4 +213,39 @@ func (m *server) Download(ctx context.Context,
 			return status.Error(codes.Canceled, ctx.Err().Error())
 		}
 	}
+}
+
+func (m *server) RegisterFile(ctx context.Context, request *dfdaemongrpc.RegisterFileRequest) error {
+	file := request.Path
+	taskID := TODO
+	log := logger.With("component", "cacheService", "file", file)
+
+	stat, err := os.Stat(file)
+	if err != nil {
+		log.WithError(err).Error("stat file failed")
+		return err
+	}
+	size := stat.Size()
+	// TODO: use pieceManager.computePieceSize
+	pieceSize := util.ComputePieceSize(size)
+	maxPieceNum := util.ComputeMaxPieceNum(size, pieceSize)
+
+	// 1. Register to storageManager
+
+	// 2. Store to storageManager
+	err = m.storageManager.Store(ctx, &storage.StoreRequest{
+		CommonTaskRequest: storage.CommonTaskRequest{
+			PeerID:      TODO,
+			TaskID:      taskID,
+			Destination: file,
+		},
+		AddToStorage: true,
+		TotalPieces:  maxPieceNum,
+	})
+	if err != nil {
+		log.WithError(err).Errorf("register file failed, taskID %s", taskID)
+	} else {
+		log.Infof("register file succeeded, taskID %s", taskID)
+	}
+	return err
 }
