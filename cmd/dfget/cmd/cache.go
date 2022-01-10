@@ -1,5 +1,5 @@
 /*
- *     Copyright 2020 The Dragonfly Authors
+ *     Copyright 2022 The Dragonfly Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,42 +17,20 @@
 package cmd
 
 import (
-	"context"
 	"fmt"
-	"os"
-	"os/exec"
-	"strconv"
-	"syscall"
-	"time"
 
-	"github.com/gofrs/flock"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
-	"gopkg.in/yaml.v3"
 
 	"d7y.io/dragonfly/v2/client/config"
-	"d7y.io/dragonfly/v2/client/dfget"
 	"d7y.io/dragonfly/v2/cmd/dependency"
-	"d7y.io/dragonfly/v2/internal/constants"
-	logger "d7y.io/dragonfly/v2/internal/dflog"
 	"d7y.io/dragonfly/v2/internal/dflog/logcore"
-	"d7y.io/dragonfly/v2/internal/dfnet"
-	"d7y.io/dragonfly/v2/pkg/basic"
-	"d7y.io/dragonfly/v2/pkg/dfpath"
-	"d7y.io/dragonfly/v2/pkg/rpc/dfdaemon/client"
 	"d7y.io/dragonfly/v2/pkg/source"
-	"d7y.io/dragonfly/v2/pkg/unit"
-	"d7y.io/dragonfly/v2/pkg/util/net/iputils"
-	"d7y.io/dragonfly/v2/version"
 )
 
 var (
-	dfgetConfig *config.DfgetConfig
-)
-
-var (
-	cacheDescription = `TODO: cacheDescription`
+	cacheDescription  = `TODO: cacheDescription`
 	importDescription = `TODO: importDescription`
 )
 
@@ -79,6 +57,34 @@ var importCmd = &cobra.Command{
 	SilenceUsage:       true,
 	FParseErrWhitelist: cobra.FParseErrWhitelist{UnknownFlags: true},
 	RunE: func(cmd *cobra.Command, args []string) error {
+		// Initialize daemon dfpath
+		d, err := initDfgetDfpath(dfgetConfig)
+		if err != nil {
+			return err
+		}
+
+		// Initialize logger
+		if err := logcore.InitDfget(dfgetConfig.Console, d.LogDir()); err != nil {
+			return errors.Wrap(err, "init client dfget logger")
+		}
+
+		// update plugin directory
+		source.UpdatePluginDir(d.PluginDir())
+
+		fmt.Printf("dfgetConfig: \"%v\"\n", dfgetConfig)
+
+		// Convert config
+		if err := dfgetConfig.Convert(args); err != nil {
+			fmt.Printf("convert failed: %v\n", err)
+			return err
+		}
+
+		// Validate config
+		if err := dfgetConfig.Validate(); err != nil {
+			return err
+		}
+
+		return nil
 	},
 }
 
@@ -88,6 +94,8 @@ func init() {
 
 	// Initialize default dfget config
 	dfgetConfig = config.NewDfgetConfig()
+	dfgetConfig.IsCache = true
+
 	// Initialize cobra
 	dependency.InitCobra(importCmd, false, dfgetConfig)
 
@@ -96,22 +104,24 @@ func init() {
 }
 
 func addImportCmdFlags(cmd *cobra.Command) {
-	importFlag := cmd.Flags()
+	flagSet := cmd.Flags()
 
-	flagSet.StringP("file", "f", dfgetConfig.Output,
+	flagSet.StringP("input", "I", dfgetConfig.Input,
 		"Import file into cache system, equivalent to the command's first position argument")
 
-	flagSet.StringP("id", "i", dfgetConfig.URL,
-		"Destination path which is used to store the downloaded file, it must be a full path")
+	flagSet.StringP("inputid", "i", dfgetConfig.InputID,
+		"Identification of the imported file, could be a hash or a URL")
 
-	flagSet.String("tag", dfgetConfig.Tag,
-		"Different tags for the same url will be divided into different P2P overlay, it conflicts with --digest")
+	flagSet.StringP("tag", "t", dfgetConfig.Tag,
+		"Different tags for the same ID will be divided into different P2P overlay, it conflicts with --digest")
 
-	flagSet.StringSliceP("header", "H", dfgetConfig.Header, "url header, eg: --header='Accept: *' --header='Host: abc'")
+	flagSet.StringP("callsystem", "c", dfgetConfig.CallSystem, "The caller name which is mainly used for statistics and access control")
 
-	flagSet.String("callsystem", dfgetConfig.CallSystem, "The caller name which is mainly used for statistics and access control")
+	flagSet.StringP("workhome", "w", dfgetConfig.WorkHome, "Dfget working directory")
 
-	flagSet.String("workhome", dfgetConfig.WorkHome, "Dfget working directory")
+	flagSet.StringP("logdir", "l", dfgetConfig.LogDir, "Dfget log directory")
 
-	flagSet.String("logdir", dfgetConfig.LogDir, "Dfget log directory")
+	if err := viper.BindPFlags(flagSet); err != nil {
+		panic(errors.Wrap(err, "bind dfget flags to viper"))
+	}
 }

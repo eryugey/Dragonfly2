@@ -37,4 +37,7 @@ var dfgetConfig = ClientOption{
 	ShowProgress:      false,
 	Recursive:         false,
 	RecursiveLevel:    5,
+	IsCache:           false,
+	Input:             "",
+	InputID:           "",
 }

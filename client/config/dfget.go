@@ -127,15 +127,39 @@ type ClientOption struct {
 	RecursiveAcceptRegex string `yaml:"acceptRegex,omitempty" mapstructure:"accept-regex,omitempty"`
 
 	RecursiveRejectRegex string `yaml:"rejectRegex,omitempty" mapstructure:"reject-regex,omitempty"`
+
+	// The following fields are only used in cache system
+
+	// IsCache indicates interactive with cache system
+	IsCache bool `yaml:"isCache,omitempty" mapstructure:"isCache,omitempty"`
+
+	// Input full input path.
+	Input string `yaml:"input,omitempty" mapstructure:"input,omitempty"`
+
+	// InputID identifies the input file, similar to URL, but could be any unique string
+	// e.g. sha256 hash or a URL
+	InputID string `yaml:"inputId,omitempty" mapstructure:"inputId,omitempty"`
 }
 
 func NewDfgetConfig() *ClientOption {
 	return &dfgetConfig
 }
 
+func (cfg *ClientOption) validateCache() error {
+	// TODO: really do validate
+	if cfg.Input == "" {
+		return errors.Wrapf(dferrors.ErrInvalidArgument, "input: %v", cfg.Input)
+	}
+	return nil
+}
+
 func (cfg *ClientOption) Validate() error {
 	if cfg == nil {
 		return errors.Wrap(dferrors.ErrInvalidArgument, "runtime config")
+	}
+
+	if cfg.IsCache {
+		return cfg.validateCache()
 	}
 
 	if !urlutils.IsValidURL(cfg.URL) {
@@ -157,8 +181,30 @@ func (cfg *ClientOption) Validate() error {
 	return nil
 }
 
+func (cfg *ClientOption) convertCache(args []string) error {
+	var err error
+	fmt.Printf("args: %v, cfg.Input: \"%s\"\n", args, cfg.Input)
+	if cfg.Input == "" && len(args) > 0 {
+		cfg.Input = args[0]
+	}
+	if cfg.Input == "" {
+		return errors.Wrapf(dferrors.ErrInvalidArgument, "missing input")
+	}
+	if cfg.Input, err = filepath.Abs(cfg.Input); err != nil {
+		return errors.Wrapf(dferrors.ErrInvalidArgument, "input: %v", err)
+	}
+	if cfg.InputID == "" {
+		cfg.InputID = cfg.Input
+	}
+	return nil
+}
+
 func (cfg *ClientOption) Convert(args []string) error {
 	var err error
+
+	if cfg.IsCache {
+		return cfg.convertCache(args)
+	}
 
 	if cfg.Output, err = filepath.Abs(cfg.Output); err != nil {
 		return err
