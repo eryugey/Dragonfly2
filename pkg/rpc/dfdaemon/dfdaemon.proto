@@ -66,6 +66,7 @@ service Daemon{
   // Check the given task exists in local cache or not
   rpc StatTask(StatTaskRequest) returns(StatTaskResult);
   // Add file into local cache
+  // TODO: return taskID to caller
   rpc ImportTask(ImportTaskRequest) returns(google.protobuf.Empty);
 }
 

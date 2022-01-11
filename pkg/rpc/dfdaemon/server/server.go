@@ -40,6 +40,10 @@ type DaemonServer interface {
 	GetPieceTasks(context.Context, *base.PieceTaskRequest) (*base.PiecePacket, error)
 	// Check daemon health
 	CheckHealth(context.Context) error
+	// Check the given task exists in local cache or not
+	StatTask(context.Context, *dfdaemon.StatTaskRequest) (*dfdaemon.StatTaskResult, error)
+	// Add file into local cache
+	ImportTask(context.Context, *dfdaemon.ImportTaskRequest) error
 }
 
 type proxy struct {
@@ -91,6 +95,14 @@ func (p *proxy) GetPieceTasks(ctx context.Context, ptr *base.PieceTaskRequest) (
 
 func (p *proxy) CheckHealth(ctx context.Context, req *empty.Empty) (*empty.Empty, error) {
 	return new(empty.Empty), p.server.CheckHealth(ctx)
+}
+
+func (p *proxy) ImportTask(ctx context.Context, req *dfdaemon.ImportTaskRequest) (*empty.Empty, error) {
+	return new(empty.Empty), p.server.ImportTask(ctx, req)
+}
+
+func (p *proxy) StatTask(ctx context.Context, req *dfdaemon.StatTaskRequest) (*dfdaemon.StatTaskResult, error) {
+	return p.server.StatTask(ctx, req)
 }
 
 func send(drc chan *dfdaemon.DownResult, closeDrc func(), stream dfdaemon.Daemon_DownloadServer, errChan chan error) {

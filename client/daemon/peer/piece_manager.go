@@ -18,6 +18,7 @@ package peer
 
 import (
 	"context"
+	"fmt"
 	"io"
 	"math"
 	"net"
@@ -25,6 +26,7 @@ import (
 	"os"
 	"time"
 
+	"github.com/pkg/errors"
 	"golang.org/x/time/rate"
 
 	"d7y.io/dragonfly/v2/client/clientutil"
@@ -569,6 +571,7 @@ func (pm *pieceManager) ImportSource(ctx context.Context, ptm storage.PeerTaskMe
 		}
 	}
 
+	// Update task with length and piece count
 	err = pm.storageManager.UpdateTask(ctx, &storage.UpdateTaskRequest{
 		PeerTaskMetadata: ptm,
 		ContentLength:    contentLength,
@@ -576,9 +579,25 @@ func (pm *pieceManager) ImportSource(ctx context.Context, ptm storage.PeerTaskMe
 		GenPieceDigest:   true,
 	})
 	if err != nil {
-		logger.Errorf("update task(%s) failed: %v", ptm.TaskID, err)
+		msg := fmt.Sprintf("update task(%s) failed: %v", ptm.TaskID, err)
+		logger.Error(msg)
+		return errors.New(msg)
 	}
-	// TODO: Store() with MetadataOnly to set t.Done = true
+
+	// Save metadata
+	err = pm.storageManager.Store(ctx, &storage.StoreRequest{
+		CommonTaskRequest: storage.CommonTaskRequest{
+			PeerID: ptm.PeerID,
+			TaskID: ptm.TaskID,
+		},
+		MetadataOnly: true,
+		StoreOnly:    false,
+	})
+	if err != nil {
+		msg := fmt.Sprintf("store task(%s) failed: %v", ptm.TaskID, err)
+		logger.Error(msg)
+		return errors.New(msg)
+	}
 
 	return nil
 }

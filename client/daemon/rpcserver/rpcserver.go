@@ -221,6 +221,8 @@ func (m *server) ImportTask(ctx context.Context, req *dfdaemongrpc.ImportTaskReq
 	taskID := idgen.TaskID(req.Url, req.UrlMeta)
 	log := logger.With("component", "cacheService", "file", req.Path, "taskID", taskID)
 
+	// TODO: check if task already exists, and skip import if so
+
 	// 1. Register to storageManager
 	if err := m.storageManager.RegisterTask(ctx, storage.RegisterTaskRequest{
 		CommonTaskRequest: storage.CommonTaskRequest{
@@ -243,6 +245,10 @@ func (m *server) ImportTask(ctx context.Context, req *dfdaemongrpc.ImportTaskReq
 		log.Infof("import file succeeded, taskID %s", taskID)
 	}
 
-	// 3. Register to scheduler asynchronously
+	// TODO: 3. Register to scheduler asynchronously
 	return nil
+}
+
+func (m *server) StatTask(ctx context.Context, req *dfdaemongrpc.StatTaskRequest) (*dfdaemongrpc.StatTaskResult, error) {
+	return nil, nil
 }
