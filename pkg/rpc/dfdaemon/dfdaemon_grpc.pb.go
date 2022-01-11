@@ -26,6 +26,10 @@ type DaemonClient interface {
 	GetPieceTasks(ctx context.Context, in *base.PieceTaskRequest, opts ...grpc.CallOption) (*base.PiecePacket, error)
 	// Check daemon health
 	CheckHealth(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	// Check the given task exists in local cache or not
+	StatTask(ctx context.Context, in *StatTaskRequest, opts ...grpc.CallOption) (*StatTaskResult, error)
+	// Add file into local cache
+	ImportTask(ctx context.Context, in *ImportTaskRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 }
 
 type daemonClient struct {
@@ -86,6 +90,24 @@ func (c *daemonClient) CheckHealth(ctx context.Context, in *emptypb.Empty, opts 
 	return out, nil
 }
 
+func (c *daemonClient) StatTask(ctx context.Context, in *StatTaskRequest, opts ...grpc.CallOption) (*StatTaskResult, error) {
+	out := new(StatTaskResult)
+	err := c.cc.Invoke(ctx, "/dfdaemon.Daemon/StatTask", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *daemonClient) ImportTask(ctx context.Context, in *ImportTaskRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+	out := new(emptypb.Empty)
+	err := c.cc.Invoke(ctx, "/dfdaemon.Daemon/ImportTask", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // DaemonServer is the server API for Daemon service.
 // All implementations must embed UnimplementedDaemonServer
 // for forward compatibility
@@ -96,6 +118,10 @@ type DaemonServer interface {
 	GetPieceTasks(context.Context, *base.PieceTaskRequest) (*base.PiecePacket, error)
 	// Check daemon health
 	CheckHealth(context.Context, *emptypb.Empty) (*emptypb.Empty, error)
+	// Check the given task exists in local cache or not
+	StatTask(context.Context, *StatTaskRequest) (*StatTaskResult, error)
+	// Add file into local cache
+	ImportTask(context.Context, *ImportTaskRequest) (*emptypb.Empty, error)
 	mustEmbedUnimplementedDaemonServer()
 }
 
@@ -111,6 +137,12 @@ func (UnimplementedDaemonServer) GetPieceTasks(context.Context, *base.PieceTaskR
 }
 func (UnimplementedDaemonServer) CheckHealth(context.Context, *emptypb.Empty) (*emptypb.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method CheckHealth not implemented")
+}
+func (UnimplementedDaemonServer) StatTask(context.Context, *StatTaskRequest) (*StatTaskResult, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method StatTask not implemented")
+}
+func (UnimplementedDaemonServer) ImportTask(context.Context, *ImportTaskRequest) (*emptypb.Empty, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ImportTask not implemented")
 }
 func (UnimplementedDaemonServer) mustEmbedUnimplementedDaemonServer() {}
 
@@ -182,6 +214,42 @@ func _Daemon_CheckHealth_Handler(srv interface{}, ctx context.Context, dec func(
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Daemon_StatTask_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(StatTaskRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(DaemonServer).StatTask(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/dfdaemon.Daemon/StatTask",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(DaemonServer).StatTask(ctx, req.(*StatTaskRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Daemon_ImportTask_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ImportTaskRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(DaemonServer).ImportTask(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/dfdaemon.Daemon/ImportTask",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(DaemonServer).ImportTask(ctx, req.(*ImportTaskRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // Daemon_ServiceDesc is the grpc.ServiceDesc for Daemon service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -197,6 +265,14 @@ var Daemon_ServiceDesc = grpc.ServiceDesc{
 			MethodName: "CheckHealth",
 			Handler:    _Daemon_CheckHealth_Handler,
 		},
+		{
+			MethodName: "StatTask",
+			Handler:    _Daemon_StatTask_Handler,
+		},
+		{
+			MethodName: "ImportTask",
+			Handler:    _Daemon_ImportTask_Handler,
+		},
 	},
 	Streams: []grpc.StreamDesc{
 		{
@@ -205,131 +281,5 @@ var Daemon_ServiceDesc = grpc.ServiceDesc{
 			ServerStreams: true,
 		},
 	},
-	Metadata: "pkg/rpc/dfdaemon/dfdaemon.proto",
-}
-
-// CacheClient is the client API for Cache service.
-//
-// For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
-type CacheClient interface {
-	// Check the given task exists in local cache or not
-	StatTask(ctx context.Context, in *StatTaskRequest, opts ...grpc.CallOption) (*StatTaskResult, error)
-	// Add file into local cache
-	ImportTask(ctx context.Context, in *ImportTaskRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
-}
-
-type cacheClient struct {
-	cc grpc.ClientConnInterface
-}
-
-func NewCacheClient(cc grpc.ClientConnInterface) CacheClient {
-	return &cacheClient{cc}
-}
-
-func (c *cacheClient) StatTask(ctx context.Context, in *StatTaskRequest, opts ...grpc.CallOption) (*StatTaskResult, error) {
-	out := new(StatTaskResult)
-	err := c.cc.Invoke(ctx, "/dfdaemon.Cache/StatTask", in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *cacheClient) ImportTask(ctx context.Context, in *ImportTaskRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
-	out := new(emptypb.Empty)
-	err := c.cc.Invoke(ctx, "/dfdaemon.Cache/ImportTask", in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-// CacheServer is the server API for Cache service.
-// All implementations must embed UnimplementedCacheServer
-// for forward compatibility
-type CacheServer interface {
-	// Check the given task exists in local cache or not
-	StatTask(context.Context, *StatTaskRequest) (*StatTaskResult, error)
-	// Add file into local cache
-	ImportTask(context.Context, *ImportTaskRequest) (*emptypb.Empty, error)
-	mustEmbedUnimplementedCacheServer()
-}
-
-// UnimplementedCacheServer must be embedded to have forward compatible implementations.
-type UnimplementedCacheServer struct {
-}
-
-func (UnimplementedCacheServer) StatTask(context.Context, *StatTaskRequest) (*StatTaskResult, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method StatTask not implemented")
-}
-func (UnimplementedCacheServer) ImportTask(context.Context, *ImportTaskRequest) (*emptypb.Empty, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method ImportTask not implemented")
-}
-func (UnimplementedCacheServer) mustEmbedUnimplementedCacheServer() {}
-
-// UnsafeCacheServer may be embedded to opt out of forward compatibility for this service.
-// Use of this interface is not recommended, as added methods to CacheServer will
-// result in compilation errors.
-type UnsafeCacheServer interface {
-	mustEmbedUnimplementedCacheServer()
-}
-
-func RegisterCacheServer(s grpc.ServiceRegistrar, srv CacheServer) {
-	s.RegisterService(&Cache_ServiceDesc, srv)
-}
-
-func _Cache_StatTask_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(StatTaskRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(CacheServer).StatTask(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/dfdaemon.Cache/StatTask",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(CacheServer).StatTask(ctx, req.(*StatTaskRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _Cache_ImportTask_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(ImportTaskRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(CacheServer).ImportTask(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/dfdaemon.Cache/ImportTask",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(CacheServer).ImportTask(ctx, req.(*ImportTaskRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-// Cache_ServiceDesc is the grpc.ServiceDesc for Cache service.
-// It's only intended for direct use with grpc.RegisterService,
-// and not to be introspected or modified (even as a copy)
-var Cache_ServiceDesc = grpc.ServiceDesc{
-	ServiceName: "dfdaemon.Cache",
-	HandlerType: (*CacheServer)(nil),
-	Methods: []grpc.MethodDesc{
-		{
-			MethodName: "StatTask",
-			Handler:    _Cache_StatTask_Handler,
-		},
-		{
-			MethodName: "ImportTask",
-			Handler:    _Cache_ImportTask_Handler,
-		},
-	},
-	Streams:  []grpc.StreamDesc{},
 	Metadata: "pkg/rpc/dfdaemon/dfdaemon.proto",
 }
