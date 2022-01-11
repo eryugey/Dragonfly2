@@ -329,3 +329,90 @@ func recursiveDownload(ctx context.Context, client daemonclient.DaemonClient, cf
 	}
 	return nil
 }
+
+func Import(cfg *config.DfgetConfig, client daemonclient.DaemonClient) error {
+	var (
+		ctx         = context.Background()
+		cancel      context.CancelFunc
+		wLog        = logger.With("file", cfg.Input)
+		importError error
+	)
+
+	wLog.Info("init success and start to import")
+	fmt.Println("init success and start to import")
+
+	if cfg.Timeout > 0 {
+		ctx, cancel = context.WithTimeout(ctx, cfg.Timeout)
+	} else {
+		ctx, cancel = context.WithCancel(ctx)
+	}
+
+	go func() {
+		importError = importTask(ctx, client, cfg, wLog)
+		cancel()
+	}()
+
+	<-ctx.Done()
+
+	if ctx.Err() == context.DeadlineExceeded {
+		return errors.Errorf("import timeout(%s)", cfg.Timeout)
+	}
+	return importError
+}
+
+func importTask(ctx context.Context, client daemonclient.DaemonClient, cfg *config.DfgetConfig, wLog *logger.SugaredLoggerOnWith) error {
+	return nil
+	/*
+		hdr := parseHeader(cfg.Header)
+
+		if client == nil {
+			return errors.Errorf("import has no daemon client")
+		}
+
+		var (
+			start     = time.Now()
+			stream    *daemonclient.DownResultStream
+			result    *dfdaemon.DownResult
+			pb        *progressbar.ProgressBar
+			request   = newDownRequest(cfg, hdr)
+			downError error
+		)
+
+		if stream, downError = client.Download(ctx, request); downError == nil {
+			if cfg.ShowProgress {
+				pb = newProgressBar(-1)
+			}
+
+			for {
+				if result, downError = stream.Recv(); downError != nil {
+					break
+				}
+
+				if result.CompletedLength > 0 && pb != nil {
+					_ = pb.Set64(int64(result.CompletedLength))
+				}
+
+				// success
+				if result.Done {
+					if pb != nil {
+						pb.Describe("Downloaded")
+						_ = pb.Close()
+					}
+
+					wLog.Infof("download from daemon success, length: %d bytes cost: %d ms", result.CompletedLength, time.Now().Sub(start).Milliseconds())
+					fmt.Printf("finish total length %d bytes\n", result.CompletedLength)
+
+					break
+				}
+			}
+		}
+
+		if downError != nil {
+			wLog.Warnf("daemon downloads file error: %v", downError)
+			fmt.Printf("daemon downloads file error: %v\n", downError)
+			downError = downloadFromSource(ctx, cfg, hdr)
+		}
+
+		return downError
+	*/
+}

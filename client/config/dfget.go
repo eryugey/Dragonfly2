@@ -183,7 +183,6 @@ func (cfg *ClientOption) Validate() error {
 
 func (cfg *ClientOption) convertCache(args []string) error {
 	var err error
-	fmt.Printf("args: %v, cfg.Input: \"%s\"\n", args, cfg.Input)
 	if cfg.Input == "" && len(args) > 0 {
 		cfg.Input = args[0]
 	}

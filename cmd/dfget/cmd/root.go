@@ -191,7 +191,6 @@ func init() {
 
 func initDfgetDfpath(cfg *config.ClientOption) (dfpath.Dfpath, error) {
 	options := []dfpath.Option{}
-	fmt.Printf("cfg.WorkHome \"%s\"\n", cfg.WorkHome)
 	if cfg.WorkHome != "" {
 		options = append(options, dfpath.WithWorkHome(cfg.WorkHome))
 	}

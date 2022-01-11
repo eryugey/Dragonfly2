@@ -18,18 +18,26 @@ package cmd
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
+	"gopkg.in/yaml.v3"
 
 	"d7y.io/dragonfly/v2/client/config"
+	"d7y.io/dragonfly/v2/client/dfget"
 	"d7y.io/dragonfly/v2/cmd/dependency"
+	"d7y.io/dragonfly/v2/internal/constants"
+	logger "d7y.io/dragonfly/v2/internal/dflog"
 	"d7y.io/dragonfly/v2/internal/dflog/logcore"
+	"d7y.io/dragonfly/v2/pkg/rpc/dfdaemon/client"
 	"d7y.io/dragonfly/v2/pkg/source"
+	"d7y.io/dragonfly/v2/version"
 )
 
 var (
+	cacheConfig *config.DfgetConfig
 	cacheDescription  = `TODO: cacheDescription`
 	importDescription = `TODO: importDescription`
 )
@@ -57,34 +65,49 @@ var importCmd = &cobra.Command{
 	SilenceUsage:       true,
 	FParseErrWhitelist: cobra.FParseErrWhitelist{UnknownFlags: true},
 	RunE: func(cmd *cobra.Command, args []string) error {
+		start := time.Now()
+
 		// Initialize daemon dfpath
-		d, err := initDfgetDfpath(dfgetConfig)
+		d, err := initDfgetDfpath(cacheConfig)
 		if err != nil {
 			return err
 		}
 
 		// Initialize logger
-		if err := logcore.InitDfget(dfgetConfig.Console, d.LogDir()); err != nil {
+		if err := logcore.InitDfget(cacheConfig.Console, d.LogDir()); err != nil {
 			return errors.Wrap(err, "init client dfget logger")
 		}
 
 		// update plugin directory
 		source.UpdatePluginDir(d.PluginDir())
 
-		fmt.Printf("dfgetConfig: \"%v\"\n", dfgetConfig)
+		fmt.Printf("cacheConfig %v\n", cacheConfig)
 
 		// Convert config
-		if err := dfgetConfig.Convert(args); err != nil {
+		if err := cacheConfig.Convert(args); err != nil {
 			fmt.Printf("convert failed: %v\n", err)
 			return err
 		}
 
 		// Validate config
-		if err := dfgetConfig.Validate(); err != nil {
+		if err := cacheConfig.Validate(); err != nil {
 			return err
 		}
 
-		return nil
+		logger.Infof("cacheConfig: %v", cacheConfig)
+
+		// save file to cache system
+		var errInfo string
+		err = runDfgetImport(d.DfgetLockPath(), d.DaemonSockPath())
+		if err != nil {
+			errInfo = fmt.Sprintf("error: %v", err)
+		}
+
+		msg := fmt.Sprintf("import success: %t cost: %d ms %s", err == nil, time.Now().Sub(start).Milliseconds(), errInfo)
+		logger.With("file", cacheConfig.Input).Info(msg)
+		fmt.Println(msg)
+
+		return errors.Wrapf(err, "import file: %s", cacheConfig.Input)
 	},
 }
 
@@ -93,11 +116,11 @@ func init() {
 	rootCmd.AddCommand(cacheCmd)
 
 	// Initialize default dfget config
-	dfgetConfig = config.NewDfgetConfig()
-	dfgetConfig.IsCache = true
+	cacheConfig = new(config.DfgetConfig)
+	cacheConfig.IsCache = true
 
 	// Initialize cobra
-	dependency.InitCobra(importCmd, false, dfgetConfig)
+	dependency.InitCobra(importCmd, false, cacheConfig)
 
 	// Add flags
 	addImportCmdFlags(importCmd)
@@ -106,22 +129,49 @@ func init() {
 func addImportCmdFlags(cmd *cobra.Command) {
 	flagSet := cmd.Flags()
 
-	flagSet.StringP("input", "I", dfgetConfig.Input,
+	flagSet.StringP("input", "I", cacheConfig.Input,
 		"Import file into cache system, equivalent to the command's first position argument")
 
-	flagSet.StringP("inputid", "i", dfgetConfig.InputID,
+	flagSet.StringP("inputid", "i", cacheConfig.InputID,
 		"Identification of the imported file, could be a hash or a URL")
 
-	flagSet.StringP("tag", "t", dfgetConfig.Tag,
+	// FIXME: following flags are not working
+	flagSet.StringP("tag", "t", cacheConfig.Tag,
 		"Different tags for the same ID will be divided into different P2P overlay, it conflicts with --digest")
 
-	flagSet.StringP("callsystem", "c", dfgetConfig.CallSystem, "The caller name which is mainly used for statistics and access control")
+	flagSet.StringP("callsystem", "c", cacheConfig.CallSystem, "The caller name which is mainly used for statistics and access control")
 
-	flagSet.StringP("workhome", "w", dfgetConfig.WorkHome, "Dfget working directory")
+	flagSet.StringP("workhome", "w", cacheConfig.WorkHome, "Dfget working directory")
 
-	flagSet.StringP("logdir", "l", dfgetConfig.LogDir, "Dfget log directory")
+	flagSet.StringP("logdir", "l", cacheConfig.LogDir, "Dfget log directory")
 
 	if err := viper.BindPFlags(flagSet); err != nil {
 		panic(errors.Wrap(err, "bind dfget flags to viper"))
 	}
+}
+
+// runDfgetImport does some init operations and starts to import file.
+func runDfgetImport(dfgetLockPath, daemonSockPath string) error {
+	logger.Infof("Version:\n%s", version.Version())
+
+	// Dfget config values
+	s, _ := yaml.Marshal(cacheConfig)
+	logger.Infof("client dfget configuration:\n%s", string(s))
+
+	ff := dependency.InitMonitor(cacheConfig.Verbose, cacheConfig.PProfPort, cacheConfig.Telemetry)
+	defer ff()
+
+	var (
+		daemonClient client.DaemonClient
+		err          error
+	)
+
+	logger.Info("start to check and spawn daemon")
+	if daemonClient, err = checkAndSpawnDaemon(dfgetLockPath, daemonSockPath); err != nil {
+		logger.Errorf("check and spawn daemon error: %v", err)
+	} else {
+		logger.Info("check and spawn daemon success")
+	}
+
+	return dfget.Import(cacheConfig, daemonClient)
 }
