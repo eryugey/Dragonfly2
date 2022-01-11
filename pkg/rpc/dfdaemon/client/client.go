@@ -77,6 +77,10 @@ type DaemonClient interface {
 
 	CheckHealth(ctx context.Context, target dfnet.NetAddr, opts ...grpc.CallOption) error
 
+	StatTask(ctx context.Context, in *dfdaemon.StatTaskRequest, opts ...grpc.CallOption) (*dfdaemon.StatTaskResult, error)
+
+	ImportTask(ctx context.Context, in *dfdaemon.ImportTaskRequest, opts ...grpc.CallOption) error
+
 	Close() error
 }
 
@@ -136,4 +140,12 @@ func (dc *daemonClient) CheckHealth(ctx context.Context, target dfnet.NetAddr, o
 		return
 	}
 	return
+}
+
+func (dc *daemonClient) StatTask(ctx context.Context, req *dfdaemon.StatTaskRequest, opts ...grpc.CallOption) (*dfdaemon.StatTaskResult, error) {
+	return nil, nil
+}
+
+func (dc *daemonClient) ImportTask(ctx context.Context, req *dfdaemon.ImportTaskRequest, opts ...grpc.CallOption)  error {
+	return nil
 }

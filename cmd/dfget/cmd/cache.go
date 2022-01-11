@@ -28,7 +28,6 @@ import (
 	"d7y.io/dragonfly/v2/client/config"
 	"d7y.io/dragonfly/v2/client/dfget"
 	"d7y.io/dragonfly/v2/cmd/dependency"
-	"d7y.io/dragonfly/v2/internal/constants"
 	logger "d7y.io/dragonfly/v2/internal/dflog"
 	"d7y.io/dragonfly/v2/internal/dflog/logcore"
 	"d7y.io/dragonfly/v2/pkg/rpc/dfdaemon/client"
@@ -37,7 +36,7 @@ import (
 )
 
 var (
-	cacheConfig *config.DfgetConfig
+	cacheConfig       *config.DfgetConfig
 	cacheDescription  = `TODO: cacheDescription`
 	importDescription = `TODO: importDescription`
 )
