@@ -142,7 +142,7 @@ func (UnimplementedDaemonServer) StatTask(context.Context, *StatTaskRequest) (*S
 	return nil, status.Errorf(codes.Unimplemented, "method StatTask not implemented")
 }
 func (UnimplementedDaemonServer) ImportTask(context.Context, *ImportTaskRequest) (*emptypb.Empty, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method ImportTask not implemented")
+	return nil, status.Errorf(codes.Unimplemented, "method ImportTask hahaha not implemented")
 }
 func (UnimplementedDaemonServer) mustEmbedUnimplementedDaemonServer() {}
 

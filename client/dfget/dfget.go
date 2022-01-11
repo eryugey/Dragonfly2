@@ -361,58 +361,26 @@ func Import(cfg *config.DfgetConfig, client daemonclient.DaemonClient) error {
 }
 
 func importTask(ctx context.Context, client daemonclient.DaemonClient, cfg *config.DfgetConfig, wLog *logger.SugaredLoggerOnWith) error {
-	return nil
-	/*
-		hdr := parseHeader(cfg.Header)
+	if client == nil {
+		return errors.Errorf("import has no daemon client")
+	}
 
-		if client == nil {
-			return errors.Errorf("import has no daemon client")
-		}
+	importError := client.ImportTask(ctx, newImportRequest(cfg))
+	if importError != nil {
+		wLog.Warnf("daemon import file error: %v", importError)
+		fmt.Printf("daemon import file error: %v\n", importError)
+	}
 
-		var (
-			start     = time.Now()
-			stream    *daemonclient.DownResultStream
-			result    *dfdaemon.DownResult
-			pb        *progressbar.ProgressBar
-			request   = newDownRequest(cfg, hdr)
-			downError error
-		)
+	return importError
+}
 
-		if stream, downError = client.Download(ctx, request); downError == nil {
-			if cfg.ShowProgress {
-				pb = newProgressBar(-1)
-			}
-
-			for {
-				if result, downError = stream.Recv(); downError != nil {
-					break
-				}
-
-				if result.CompletedLength > 0 && pb != nil {
-					_ = pb.Set64(int64(result.CompletedLength))
-				}
-
-				// success
-				if result.Done {
-					if pb != nil {
-						pb.Describe("Downloaded")
-						_ = pb.Close()
-					}
-
-					wLog.Infof("download from daemon success, length: %d bytes cost: %d ms", result.CompletedLength, time.Now().Sub(start).Milliseconds())
-					fmt.Printf("finish total length %d bytes\n", result.CompletedLength)
-
-					break
-				}
-			}
-		}
-
-		if downError != nil {
-			wLog.Warnf("daemon downloads file error: %v", downError)
-			fmt.Printf("daemon downloads file error: %v\n", downError)
-			downError = downloadFromSource(ctx, cfg, hdr)
-		}
-
-		return downError
-	*/
+func newImportRequest(cfg *config.DfgetConfig) *dfdaemon.ImportTaskRequest {
+	return &dfdaemon.ImportTaskRequest{
+		Url:               cfg.InputID,
+		Path:              cfg.Input,
+		UrlMeta: &base.UrlMeta{
+			Digest: cfg.Digest,
+			Tag:    cfg.Tag,
+		},
+	}
 }

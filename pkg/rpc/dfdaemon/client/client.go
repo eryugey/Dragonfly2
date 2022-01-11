@@ -146,6 +146,23 @@ func (dc *daemonClient) StatTask(ctx context.Context, req *dfdaemon.StatTaskRequ
 	return nil, nil
 }
 
-func (dc *daemonClient) ImportTask(ctx context.Context, req *dfdaemon.ImportTaskRequest, opts ...grpc.CallOption)  error {
-	return nil
+func (dc *daemonClient) ImportTask(ctx context.Context, req *dfdaemon.ImportTaskRequest, opts ...grpc.CallOption) error {
+	var (
+		client dfdaemon.DaemonClient
+		target string
+		err    error
+		taskID = idgen.TaskID(req.Url, req.UrlMeta)
+	)
+
+	_, err = rpc.ExecuteWithRetry(func() (interface{}, error) {
+		client, target, err = dc.getDaemonClient(taskID, false)
+		if err != nil {
+			return nil, err
+		}
+		return client.ImportTask(ctx, req, opts...)
+	}, 0.1, 2.0, 3, nil)
+	if err != nil {
+		logger.With("taskID", taskID, "file", req.Path).Errorf("ImportTask: invoke daemon node %s failed: %v", target, err)
+	}
+	return err
 }
