@@ -219,9 +219,12 @@ func (m *server) Download(ctx context.Context,
 func (m *server) ImportTask(ctx context.Context, req *dfdaemongrpc.ImportTaskRequest) error {
 	peerID := idgen.PeerID(m.peerHost.Ip)
 	taskID := idgen.TaskID(req.Url, req.UrlMeta)
-	log := logger.With("component", "cacheService", "file", req.Path, "taskID", taskID)
+	log := logger.With("component", "ImportTask", "file", req.Path, "taskID", taskID)
 
-	// TODO: check if task already exists, and skip import if so
+	if m.isTaskCompleted(taskID) {
+		log.Infof("import file skipped, task already exists")
+		return nil
+	}
 
 	// 1. Register to storageManager
 	if err := m.storageManager.RegisterTask(ctx, storage.RegisterTaskRequest{
@@ -240,15 +243,27 @@ func (m *server) ImportTask(ctx context.Context, req *dfdaemongrpc.ImportTaskReq
 		TaskID: taskID,
 	}
 	if err := m.pieceManager.ImportSource(ctx, ptm, req); err != nil {
-		log.Errorf("import file failed, taskID %s: %v", taskID, err)
+		log.Error("import file failed: %v", err)
 	} else {
-		log.Infof("import file succeeded, taskID %s", taskID)
+		log.Info("import file succeeded")
 	}
 
 	// TODO: 3. Register to scheduler asynchronously
 	return nil
 }
 
-func (m *server) StatTask(ctx context.Context, req *dfdaemongrpc.StatTaskRequest) (*dfdaemongrpc.StatTaskResult, error) {
-	return nil, nil
+func (m *server) StatTask(ctx context.Context, req *dfdaemongrpc.StatTaskRequest) error {
+	var err error
+
+	taskID := idgen.TaskID(req.Url, req.UrlMeta)
+	log := logger.With("component", "StatTask", "taskID", taskID)
+	if completed := m.isTaskCompleted(taskID); !completed {
+		log.Infof("task not found, Url: %s", req.Url)
+		err = status.Errorf(codes.NotFound, "taskID %s not found", taskID)
+	}
+	return err
+}
+
+func (m *server) isTaskCompleted(taskID string) bool {
+	return m.storageManager.FindCompletedTask(taskID) != nil
 }

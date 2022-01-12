@@ -77,7 +77,7 @@ type DaemonClient interface {
 
 	CheckHealth(ctx context.Context, target dfnet.NetAddr, opts ...grpc.CallOption) error
 
-	StatTask(ctx context.Context, in *dfdaemon.StatTaskRequest, opts ...grpc.CallOption) (*dfdaemon.StatTaskResult, error)
+	StatTask(ctx context.Context, in *dfdaemon.StatTaskRequest, opts ...grpc.CallOption) error
 
 	ImportTask(ctx context.Context, in *dfdaemon.ImportTaskRequest, opts ...grpc.CallOption) error
 
@@ -142,8 +142,25 @@ func (dc *daemonClient) CheckHealth(ctx context.Context, target dfnet.NetAddr, o
 	return
 }
 
-func (dc *daemonClient) StatTask(ctx context.Context, req *dfdaemon.StatTaskRequest, opts ...grpc.CallOption) (*dfdaemon.StatTaskResult, error) {
-	return nil, nil
+func (dc *daemonClient) StatTask(ctx context.Context, req *dfdaemon.StatTaskRequest, opts ...grpc.CallOption) error {
+	var (
+		client dfdaemon.DaemonClient
+		target string
+		err    error
+		taskID = idgen.TaskID(req.Url, req.UrlMeta)
+	)
+
+	_, err = rpc.ExecuteWithRetry(func() (interface{}, error) {
+		client, target, err = dc.getDaemonClient(taskID, false)
+		if err != nil {
+			return nil, err
+		}
+		return client.StatTask(ctx, req, opts...)
+	}, 0, 0, 1, nil)
+	if err != nil {
+		logger.With("taskID", taskID).Errorf("StatTask: invoke daemon node %s failed: %v", target, err)
+	}
+	return err
 }
 
 func (dc *daemonClient) ImportTask(ctx context.Context, req *dfdaemon.ImportTaskRequest, opts ...grpc.CallOption) error {

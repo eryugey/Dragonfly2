@@ -41,7 +41,7 @@ type DaemonServer interface {
 	// Check daemon health
 	CheckHealth(context.Context) error
 	// Check the given task exists in local cache or not
-	StatTask(context.Context, *dfdaemon.StatTaskRequest) (*dfdaemon.StatTaskResult, error)
+	StatTask(context.Context, *dfdaemon.StatTaskRequest) error
 	// Add file into local cache
 	ImportTask(context.Context, *dfdaemon.ImportTaskRequest) error
 }
@@ -101,8 +101,8 @@ func (p *proxy) ImportTask(ctx context.Context, req *dfdaemon.ImportTaskRequest)
 	return new(empty.Empty), p.server.ImportTask(ctx, req)
 }
 
-func (p *proxy) StatTask(ctx context.Context, req *dfdaemon.StatTaskRequest) (*dfdaemon.StatTaskResult, error) {
-	return p.server.StatTask(ctx, req)
+func (p *proxy) StatTask(ctx context.Context, req *dfdaemon.StatTaskRequest) (*empty.Empty, error) {
+	return new(empty.Empty), p.server.StatTask(ctx, req)
 }
 
 func send(drc chan *dfdaemon.DownResult, closeDrc func(), stream dfdaemon.Daemon_DownloadServer, errChan chan error) {

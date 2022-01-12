@@ -64,7 +64,7 @@ service Daemon{
   // Check daemon health
   rpc CheckHealth(google.protobuf.Empty)returns(google.protobuf.Empty);
   // Check the given task exists in local cache or not
-  rpc StatTask(StatTaskRequest) returns(StatTaskResult);
+  rpc StatTask(StatTaskRequest) returns(google.protobuf.Empty);
   // Add file into local cache
   // TODO: return taskID to caller
   rpc ImportTask(ImportTaskRequest) returns(google.protobuf.Empty);
@@ -73,10 +73,6 @@ service Daemon{
 message StatTaskRequest{
   string url = 1 [(validate.rules).string.min_len = 1];
   base.UrlMeta url_meta = 2;
-}
-
-message StatTaskResult{
-  string path = 1 [(validate.rules).string.min_len = 1];
 }
 
 message ImportTaskRequest{

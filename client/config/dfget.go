@@ -136,9 +136,14 @@ type ClientOption struct {
 	// Input full input path.
 	Input string `yaml:"input,omitempty" mapstructure:"input,omitempty"`
 
+	// TODO: merge InputID and StatID
 	// InputID identifies the input file, similar to URL, but could be any unique string
 	// e.g. sha256 hash or a URL
 	InputID string `yaml:"inputId,omitempty" mapstructure:"inputId,omitempty"`
+
+	// StatID identifies the stat file, similar to URL, but could be any unique string
+	// e.g. sha256 hash or a URL
+	StatID string `yaml:"statId,omitempty" mapstructure:"statId,omitempty"`
 }
 
 func NewDfgetConfig() *ClientOption {
@@ -147,8 +152,8 @@ func NewDfgetConfig() *ClientOption {
 
 func (cfg *ClientOption) validateCache() error {
 	// TODO: really do validate
-	if cfg.Input == "" {
-		return errors.Wrapf(dferrors.ErrInvalidArgument, "input: %v", cfg.Input)
+	if cfg.Input == "" && cfg.StatID == "" {
+		return errors.Wrap(dferrors.ErrInvalidArgument, "require input or statid")
 	}
 	return nil
 }
@@ -186,9 +191,11 @@ func (cfg *ClientOption) convertCache(args []string) error {
 	if cfg.Input == "" && len(args) > 0 {
 		cfg.Input = args[0]
 	}
+	/*
 	if cfg.Input == "" {
 		return errors.Wrapf(dferrors.ErrInvalidArgument, "missing input")
 	}
+	*/
 	if cfg.Input, err = filepath.Abs(cfg.Input); err != nil {
 		return errors.Wrapf(dferrors.ErrInvalidArgument, "input: %v", err)
 	}

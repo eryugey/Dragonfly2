@@ -39,6 +39,7 @@ var (
 	cacheConfig       *config.DfgetConfig
 	cacheDescription  = `TODO: cacheDescription`
 	importDescription = `TODO: importDescription`
+	statDescription   = `TODO: statDescription`
 )
 
 // cacheCmd represents the cache command, and it requires sub-commands, so no Run or RunE provided
@@ -110,8 +111,66 @@ var importCmd = &cobra.Command{
 	},
 }
 
+// stat represents the cache stat command
+var statCmd = &cobra.Command{
+	// TODO: stat Use and Short
+	Use:                "stat",
+	Short:              "stat checks if given file exists in cache system",
+	Long:               statDescription,
+	Args:               cobra.MaximumNArgs(0),
+	DisableAutoGenTag:  true,
+	SilenceUsage:       true,
+	FParseErrWhitelist: cobra.FParseErrWhitelist{UnknownFlags: true},
+	RunE: func(cmd *cobra.Command, args []string) error {
+		start := time.Now()
+
+		// Initialize daemon dfpath
+		d, err := initDfgetDfpath(cacheConfig)
+		if err != nil {
+			return err
+		}
+
+		// Initialize logger
+		if err := logcore.InitDfget(cacheConfig.Console, d.LogDir()); err != nil {
+			return errors.Wrap(err, "init client dfget logger")
+		}
+
+		// update plugin directory
+		source.UpdatePluginDir(d.PluginDir())
+
+		fmt.Printf("cacheConfig %v\n", cacheConfig)
+
+		// Convert config
+		if err := cacheConfig.Convert(args); err != nil {
+			fmt.Printf("convert failed: %v\n", err)
+			return err
+		}
+
+		// Validate config
+		if err := cacheConfig.Validate(); err != nil {
+			return err
+		}
+
+		logger.Infof("cacheConfig: %v", cacheConfig)
+
+		// save file to cache system
+		var errInfo string
+		err = runDfgetStat(d.DfgetLockPath(), d.DaemonSockPath())
+		if err != nil {
+			errInfo = fmt.Sprintf("error: %v", err)
+		}
+
+		msg := fmt.Sprintf("stat success: %t cost: %d ms %s", err == nil, time.Now().Sub(start).Milliseconds(), errInfo)
+		logger.With("statID", cacheConfig.StatID).Info(msg)
+		fmt.Println(msg)
+
+		return errors.Wrapf(err, "stat file: %s", cacheConfig.StatID)
+	},
+}
+
 func init() {
 	cacheCmd.AddCommand(importCmd)
+	cacheCmd.AddCommand(statCmd)
 	rootCmd.AddCommand(cacheCmd)
 
 	// Initialize default dfget config
@@ -120,9 +179,11 @@ func init() {
 
 	// Initialize cobra
 	dependency.InitCobra(importCmd, false, cacheConfig)
+	dependency.InitCobra(statCmd, false, cacheConfig)
 
 	// Add flags
 	addImportCmdFlags(importCmd)
+	addStatCmdFlags(statCmd)
 }
 
 func addImportCmdFlags(cmd *cobra.Command) {
@@ -133,6 +194,27 @@ func addImportCmdFlags(cmd *cobra.Command) {
 
 	flagSet.StringP("inputid", "i", cacheConfig.InputID,
 		"Identification of the imported file, could be a hash or a URL")
+
+	// FIXME: following flags are not working
+	flagSet.StringP("tag", "t", cacheConfig.Tag,
+		"Different tags for the same ID will be divided into different P2P overlay, it conflicts with --digest")
+
+	flagSet.StringP("callsystem", "c", cacheConfig.CallSystem, "The caller name which is mainly used for statistics and access control")
+
+	flagSet.StringP("workhome", "w", cacheConfig.WorkHome, "Dfget working directory")
+
+	flagSet.StringP("logdir", "l", cacheConfig.LogDir, "Dfget log directory")
+
+	if err := viper.BindPFlags(flagSet); err != nil {
+		panic(errors.Wrap(err, "bind dfget flags to viper"))
+	}
+}
+
+func addStatCmdFlags(cmd *cobra.Command) {
+	flagSet := cmd.Flags()
+
+	flagSet.StringP("statid", "i", cacheConfig.StatID,
+		"Identification of the stated file, could be a hash or a URL")
 
 	// FIXME: following flags are not working
 	flagSet.StringP("tag", "t", cacheConfig.Tag,
@@ -173,4 +255,30 @@ func runDfgetImport(dfgetLockPath, daemonSockPath string) error {
 	}
 
 	return dfget.Import(cacheConfig, daemonClient)
+}
+
+// runDfgetStat does some init operations and starts to stat file.
+func runDfgetStat(dfgetLockPath, daemonSockPath string) error {
+	logger.Infof("Version:\n%s", version.Version())
+
+	// Dfget config values
+	s, _ := yaml.Marshal(cacheConfig)
+	logger.Infof("client dfget configuration:\n%s", string(s))
+
+	ff := dependency.InitMonitor(cacheConfig.Verbose, cacheConfig.PProfPort, cacheConfig.Telemetry)
+	defer ff()
+
+	var (
+		daemonClient client.DaemonClient
+		err          error
+	)
+
+	logger.Info("start to check and spawn daemon")
+	if daemonClient, err = checkAndSpawnDaemon(dfgetLockPath, daemonSockPath); err != nil {
+		logger.Errorf("check and spawn daemon error: %v", err)
+	} else {
+		logger.Info("check and spawn daemon success")
+	}
+
+	return dfget.Stat(cacheConfig, daemonClient)
 }

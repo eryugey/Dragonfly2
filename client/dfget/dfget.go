@@ -376,8 +376,61 @@ func importTask(ctx context.Context, client daemonclient.DaemonClient, cfg *conf
 
 func newImportRequest(cfg *config.DfgetConfig) *dfdaemon.ImportTaskRequest {
 	return &dfdaemon.ImportTaskRequest{
-		Url:               cfg.InputID,
-		Path:              cfg.Input,
+		Url:  cfg.InputID,
+		Path: cfg.Input,
+		UrlMeta: &base.UrlMeta{
+			Digest: cfg.Digest,
+			Tag:    cfg.Tag,
+		},
+	}
+}
+
+func Stat(cfg *config.DfgetConfig, client daemonclient.DaemonClient) error {
+	var (
+		ctx       = context.Background()
+		cancel    context.CancelFunc
+		wLog      = logger.With("Url", cfg.InputID)
+		statError error
+	)
+
+	wLog.Info("init success and start to stat")
+	fmt.Println("init success and start to stat")
+
+	if cfg.Timeout > 0 {
+		ctx, cancel = context.WithTimeout(ctx, cfg.Timeout)
+	} else {
+		ctx, cancel = context.WithCancel(ctx)
+	}
+
+	go func() {
+		statError = statTask(ctx, client, cfg, wLog)
+		cancel()
+	}()
+
+	<-ctx.Done()
+
+	if ctx.Err() == context.DeadlineExceeded {
+		return errors.Errorf("stat timeout(%s)", cfg.Timeout)
+	}
+	return statError
+}
+
+func statTask(ctx context.Context, client daemonclient.DaemonClient, cfg *config.DfgetConfig, wLog *logger.SugaredLoggerOnWith) error {
+	if client == nil {
+		return errors.Errorf("stat has no daemon client")
+	}
+
+	statError := client.StatTask(ctx, newStatRequest(cfg))
+	if statError != nil {
+		wLog.Infof("daemon stat file error: %v", statError)
+	}
+
+	return statError
+}
+
+func newStatRequest(cfg *config.DfgetConfig) *dfdaemon.StatTaskRequest {
+	return &dfdaemon.StatTaskRequest{
+		Url: cfg.StatID,
 		UrlMeta: &base.UrlMeta{
 			Digest: cfg.Digest,
 			Tag:    cfg.Tag,

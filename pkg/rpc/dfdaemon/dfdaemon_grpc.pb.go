@@ -27,7 +27,7 @@ type DaemonClient interface {
 	// Check daemon health
 	CheckHealth(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	// Check the given task exists in local cache or not
-	StatTask(ctx context.Context, in *StatTaskRequest, opts ...grpc.CallOption) (*StatTaskResult, error)
+	StatTask(ctx context.Context, in *StatTaskRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	// Add file into local cache
 	// TODO: return taskID to caller
 	ImportTask(ctx context.Context, in *ImportTaskRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
@@ -91,8 +91,8 @@ func (c *daemonClient) CheckHealth(ctx context.Context, in *emptypb.Empty, opts 
 	return out, nil
 }
 
-func (c *daemonClient) StatTask(ctx context.Context, in *StatTaskRequest, opts ...grpc.CallOption) (*StatTaskResult, error) {
-	out := new(StatTaskResult)
+func (c *daemonClient) StatTask(ctx context.Context, in *StatTaskRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+	out := new(emptypb.Empty)
 	err := c.cc.Invoke(ctx, "/dfdaemon.Daemon/StatTask", in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -120,7 +120,7 @@ type DaemonServer interface {
 	// Check daemon health
 	CheckHealth(context.Context, *emptypb.Empty) (*emptypb.Empty, error)
 	// Check the given task exists in local cache or not
-	StatTask(context.Context, *StatTaskRequest) (*StatTaskResult, error)
+	StatTask(context.Context, *StatTaskRequest) (*emptypb.Empty, error)
 	// Add file into local cache
 	// TODO: return taskID to caller
 	ImportTask(context.Context, *ImportTaskRequest) (*emptypb.Empty, error)
@@ -140,7 +140,7 @@ func (UnimplementedDaemonServer) GetPieceTasks(context.Context, *base.PieceTaskR
 func (UnimplementedDaemonServer) CheckHealth(context.Context, *emptypb.Empty) (*emptypb.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method CheckHealth not implemented")
 }
-func (UnimplementedDaemonServer) StatTask(context.Context, *StatTaskRequest) (*StatTaskResult, error) {
+func (UnimplementedDaemonServer) StatTask(context.Context, *StatTaskRequest) (*emptypb.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method StatTask not implemented")
 }
 func (UnimplementedDaemonServer) ImportTask(context.Context, *ImportTaskRequest) (*emptypb.Empty, error) {
