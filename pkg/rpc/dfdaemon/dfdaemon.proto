@@ -71,7 +71,8 @@ service Daemon{
 }
 
 message StatTaskRequest{
-  string task_id = 1 [(validate.rules).string.min_len = 1];
+  string url = 1 [(validate.rules).string.min_len = 1];
+  base.UrlMeta url_meta = 2;
 }
 
 message StatTaskResult{
