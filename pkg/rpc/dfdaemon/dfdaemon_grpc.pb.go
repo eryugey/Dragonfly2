@@ -29,6 +29,7 @@ type DaemonClient interface {
 	// Check the given task exists in local cache or not
 	StatTask(ctx context.Context, in *StatTaskRequest, opts ...grpc.CallOption) (*StatTaskResult, error)
 	// Add file into local cache
+	// TODO: return taskID to caller
 	ImportTask(ctx context.Context, in *ImportTaskRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 }
 
@@ -121,6 +122,7 @@ type DaemonServer interface {
 	// Check the given task exists in local cache or not
 	StatTask(context.Context, *StatTaskRequest) (*StatTaskResult, error)
 	// Add file into local cache
+	// TODO: return taskID to caller
 	ImportTask(context.Context, *ImportTaskRequest) (*emptypb.Empty, error)
 	mustEmbedUnimplementedDaemonServer()
 }

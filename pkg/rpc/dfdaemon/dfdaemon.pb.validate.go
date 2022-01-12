@@ -281,10 +281,20 @@ func (m *StatTaskRequest) Validate() error {
 		return nil
 	}
 
-	if utf8.RuneCountInString(m.GetTaskId()) < 1 {
+	if utf8.RuneCountInString(m.GetUrl()) < 1 {
 		return StatTaskRequestValidationError{
-			field:  "TaskId",
+			field:  "Url",
 			reason: "value length must be at least 1 runes",
+		}
+	}
+
+	if v, ok := interface{}(m.GetUrlMeta()).(interface{ Validate() error }); ok {
+		if err := v.Validate(); err != nil {
+			return StatTaskRequestValidationError{
+				field:  "UrlMeta",
+				reason: "embedded message failed validation",
+				cause:  err,
+			}
 		}
 	}
 
