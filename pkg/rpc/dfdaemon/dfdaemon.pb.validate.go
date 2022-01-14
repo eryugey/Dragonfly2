@@ -445,3 +445,96 @@ var _ interface {
 	Cause() error
 	ErrorName() string
 } = ImportTaskRequestValidationError{}
+
+// Validate checks the field values on ExportTaskRequest with the rules defined
+// in the proto definition for this message. If any rules are violated, an
+// error is returned.
+func (m *ExportTaskRequest) Validate() error {
+	if m == nil {
+		return nil
+	}
+
+	if utf8.RuneCountInString(m.GetUrl()) < 1 {
+		return ExportTaskRequestValidationError{
+			field:  "Url",
+			reason: "value length must be at least 1 runes",
+		}
+	}
+
+	if v, ok := interface{}(m.GetUrlMeta()).(interface{ Validate() error }); ok {
+		if err := v.Validate(); err != nil {
+			return ExportTaskRequestValidationError{
+				field:  "UrlMeta",
+				reason: "embedded message failed validation",
+				cause:  err,
+			}
+		}
+	}
+
+	if utf8.RuneCountInString(m.GetPath()) < 1 {
+		return ExportTaskRequestValidationError{
+			field:  "Path",
+			reason: "value length must be at least 1 runes",
+		}
+	}
+
+	// no validation rules for LocalOnly
+
+	return nil
+}
+
+// ExportTaskRequestValidationError is the validation error returned by
+// ExportTaskRequest.Validate if the designated constraints aren't met.
+type ExportTaskRequestValidationError struct {
+	field  string
+	reason string
+	cause  error
+	key    bool
+}
+
+// Field function returns field value.
+func (e ExportTaskRequestValidationError) Field() string { return e.field }
+
+// Reason function returns reason value.
+func (e ExportTaskRequestValidationError) Reason() string { return e.reason }
+
+// Cause function returns cause value.
+func (e ExportTaskRequestValidationError) Cause() error { return e.cause }
+
+// Key function returns key value.
+func (e ExportTaskRequestValidationError) Key() bool { return e.key }
+
+// ErrorName returns error name.
+func (e ExportTaskRequestValidationError) ErrorName() string {
+	return "ExportTaskRequestValidationError"
+}
+
+// Error satisfies the builtin error interface
+func (e ExportTaskRequestValidationError) Error() string {
+	cause := ""
+	if e.cause != nil {
+		cause = fmt.Sprintf(" | caused by: %v", e.cause)
+	}
+
+	key := ""
+	if e.key {
+		key = "key for "
+	}
+
+	return fmt.Sprintf(
+		"invalid %sExportTaskRequest.%s: %s%s",
+		key,
+		e.field,
+		e.reason,
+		cause)
+}
+
+var _ error = ExportTaskRequestValidationError{}
+
+var _ interface {
+	Field() string
+	Reason() string
+	Key() bool
+	Cause() error
+	ErrorName() string
+} = ExportTaskRequestValidationError{}
