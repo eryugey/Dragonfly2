@@ -66,8 +66,9 @@ service Daemon{
   // Check the given task exists in local cache or not
   rpc StatTask(StatTaskRequest) returns(google.protobuf.Empty);
   // Add file into local cache
-  // TODO: return taskID to caller
   rpc ImportTask(ImportTaskRequest) returns(google.protobuf.Empty);
+  // Download file from cache system
+  rpc ExportTask(ExportTaskRequest) returns(google.protobuf.Empty);
 }
 
 message StatTaskRequest{
@@ -79,4 +80,12 @@ message ImportTaskRequest{
   string url = 1 [(validate.rules).string.min_len = 1];
   base.UrlMeta url_meta = 2;
   string path = 3 [(validate.rules).string.min_len = 1];
+}
+
+message ExportTaskRequest{
+  string url = 1 [(validate.rules).string.min_len = 1];
+  base.UrlMeta url_meta = 2;
+  string path = 3 [(validate.rules).string.min_len = 1];
+  bool local_only = 4;
+  // TODO: other DownRequest common fields
 }
