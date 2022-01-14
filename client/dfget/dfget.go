@@ -389,7 +389,7 @@ func Stat(cfg *config.DfgetConfig, client daemonclient.DaemonClient) error {
 	var (
 		ctx       = context.Background()
 		cancel    context.CancelFunc
-		wLog      = logger.With("Url", cfg.InputID)
+		wLog      = logger.With("Url", cfg.StatID)
 		statError error
 	)
 
@@ -431,6 +431,61 @@ func statTask(ctx context.Context, client daemonclient.DaemonClient, cfg *config
 func newStatRequest(cfg *config.DfgetConfig) *dfdaemon.StatTaskRequest {
 	return &dfdaemon.StatTaskRequest{
 		Url: cfg.StatID,
+		UrlMeta: &base.UrlMeta{
+			Digest: cfg.Digest,
+			Tag:    cfg.Tag,
+		},
+	}
+}
+
+func Export(cfg *config.DfgetConfig, client daemonclient.DaemonClient) error {
+	var (
+		ctx         = context.Background()
+		cancel      context.CancelFunc
+		wLog        = logger.With("file", cfg.ExportID)
+		exportError error
+	)
+
+	wLog.Info("init success and start to export")
+	fmt.Println("init success and start to export")
+
+	if cfg.Timeout > 0 {
+		ctx, cancel = context.WithTimeout(ctx, cfg.Timeout)
+	} else {
+		ctx, cancel = context.WithCancel(ctx)
+	}
+
+	go func() {
+		exportError = exportTask(ctx, client, cfg, wLog)
+		cancel()
+	}()
+
+	<-ctx.Done()
+
+	if ctx.Err() == context.DeadlineExceeded {
+		return errors.Errorf("export timeout(%s)", cfg.Timeout)
+	}
+	return exportError
+}
+
+func exportTask(ctx context.Context, client daemonclient.DaemonClient, cfg *config.DfgetConfig, wLog *logger.SugaredLoggerOnWith) error {
+	if client == nil {
+		return errors.Errorf("export has no daemon client")
+	}
+
+	exportError := client.ExportTask(ctx, newExportRequest(cfg))
+	if exportError != nil {
+		wLog.Warnf("daemon export file error: %v", exportError)
+		fmt.Printf("daemon export file error: %v\n", exportError)
+	}
+
+	return exportError
+}
+
+func newExportRequest(cfg *config.DfgetConfig) *dfdaemon.ExportTaskRequest {
+	return &dfdaemon.ExportTaskRequest{
+		Url:  cfg.ExportID,
+		Path: cfg.ExportOutput,
 		UrlMeta: &base.UrlMeta{
 			Digest: cfg.Digest,
 			Tag:    cfg.Tag,

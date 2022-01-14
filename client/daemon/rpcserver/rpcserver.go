@@ -264,6 +264,37 @@ func (m *server) StatTask(ctx context.Context, req *dfdaemongrpc.StatTaskRequest
 	return err
 }
 
+func (m *server) ExportTask(ctx context.Context, req *dfdaemongrpc.ExportTaskRequest) error {
+	taskID := idgen.TaskID(req.Url, req.UrlMeta)
+	log := logger.With("component", "ExportTask", "taskID", taskID, "destination", req.Path)
+
+	if completed := m.isTaskCompleted(taskID); !completed {
+		// If only use local cache and task doesn't exist, return error
+		if req.LocalOnly {
+			return status.Errorf(codes.NotFound, "taskID %s not found", taskID)
+		}
+		log.Infof("task not found, try from peers, Url: %s", req.Url)
+		return m.exportFromPeers(taskID)
+	}
+	return m.exportFromLocal(ctx, log, taskID, req)
+}
+
 func (m *server) isTaskCompleted(taskID string) bool {
 	return m.storageManager.FindCompletedTask(taskID) != nil
+}
+
+func (m *server) exportFromLocal(ctx context.Context, _log *logger.SugaredLoggerOnWith, taskID string, req *dfdaemongrpc.ExportTaskRequest) error {
+	return m.storageManager.Store(ctx, &storage.StoreRequest{
+		CommonTaskRequest: storage.CommonTaskRequest{
+			PeerID:      "",
+			TaskID:      taskID,
+			Destination: req.Path,
+		},
+		StoreOnly: true,
+	})
+}
+
+// TODO
+func (m *server) exportFromPeers(taskID string) error {
+	return status.Errorf(codes.NotFound, "taskID %s not found from peers", taskID)
 }
