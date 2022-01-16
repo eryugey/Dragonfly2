@@ -40,6 +40,9 @@ import (
 	schedulerclient "d7y.io/dragonfly/v2/pkg/rpc/scheduler/client"
 )
 
+// PeerID for local cache system
+const LocalCachePeerID = "localcache_peer"
+
 // TaskManager processes all peer tasks request
 type TaskManager interface {
 	// StartFilePeerTask starts a peer task to download a file

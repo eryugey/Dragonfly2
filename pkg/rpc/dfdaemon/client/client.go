@@ -81,6 +81,8 @@ type DaemonClient interface {
 
 	ImportTask(ctx context.Context, in *dfdaemon.ImportTaskRequest, opts ...grpc.CallOption) error
 
+	ExportTask(ctx context.Context, in *dfdaemon.ExportTaskRequest, opts ...grpc.CallOption) error
+
 	Close() error
 }
 

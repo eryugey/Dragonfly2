@@ -144,6 +144,16 @@ type ClientOption struct {
 	// StatID identifies the stat file, similar to URL, but could be any unique string
 	// e.g. sha256 hash or a URL
 	StatID string `yaml:"statId,omitempty" mapstructure:"statId,omitempty"`
+
+	// ExportID identifies the stat file, similar to URL, but could be any unique string
+	// e.g. sha256 hash or a URL
+	ExportID string `yaml:"exportId,omitempty" mapstructure:"exportId,omitempty"`
+
+	// ExportOutput full export output path.
+	ExportOutput string `yaml:"exportOutput,omitempty" mapstructure:"exportOutput,omitempty"`
+
+	// LocalOnly uses local cache, skip P2P network
+	LocalOnly bool `yaml:"localOnly,omitempty" mapstructure:"localOnly,omitempty"`
 }
 
 func NewDfgetConfig() *ClientOption {
@@ -152,8 +162,8 @@ func NewDfgetConfig() *ClientOption {
 
 func (cfg *ClientOption) validateCache() error {
 	// TODO: really do validate
-	if cfg.Input == "" && cfg.StatID == "" {
-		return errors.Wrap(dferrors.ErrInvalidArgument, "require input or statid")
+	if cfg.Input == "" && cfg.StatID == "" && cfg.ExportID == "" {
+		return errors.Wrap(dferrors.ErrInvalidArgument, "require input or statid or exportid")
 	}
 	return nil
 }
@@ -191,10 +201,13 @@ func (cfg *ClientOption) convertCache(args []string) error {
 	if cfg.Input == "" && len(args) > 0 {
 		cfg.Input = args[0]
 	}
-	/*
-	if cfg.Input == "" {
-		return errors.Wrapf(dferrors.ErrInvalidArgument, "missing input")
+	if cfg.ExportOutput == "" && len(args) > 0 {
+		cfg.ExportOutput = args[0]
 	}
+	/*
+		if cfg.Input == "" {
+			return errors.Wrapf(dferrors.ErrInvalidArgument, "missing input")
+		}
 	*/
 	if cfg.Input, err = filepath.Abs(cfg.Input); err != nil {
 		return errors.Wrapf(dferrors.ErrInvalidArgument, "input: %v", err)

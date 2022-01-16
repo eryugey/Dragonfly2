@@ -484,8 +484,9 @@ func exportTask(ctx context.Context, client daemonclient.DaemonClient, cfg *conf
 
 func newExportRequest(cfg *config.DfgetConfig) *dfdaemon.ExportTaskRequest {
 	return &dfdaemon.ExportTaskRequest{
-		Url:  cfg.ExportID,
-		Path: cfg.ExportOutput,
+		Url:       cfg.ExportID,
+		Path:      cfg.ExportOutput,
+		LocalOnly: cfg.LocalOnly,
 		UrlMeta: &base.UrlMeta{
 			Digest: cfg.Digest,
 			Tag:    cfg.Tag,

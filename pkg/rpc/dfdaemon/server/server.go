@@ -44,6 +44,8 @@ type DaemonServer interface {
 	StatTask(context.Context, *dfdaemon.StatTaskRequest) error
 	// Add file into local cache
 	ImportTask(context.Context, *dfdaemon.ImportTaskRequest) error
+	// Download file from local cache
+	ExportTask(context.Context, *dfdaemon.ExportTaskRequest) error
 }
 
 type proxy struct {
@@ -103,6 +105,10 @@ func (p *proxy) ImportTask(ctx context.Context, req *dfdaemon.ImportTaskRequest)
 
 func (p *proxy) StatTask(ctx context.Context, req *dfdaemon.StatTaskRequest) (*empty.Empty, error) {
 	return new(empty.Empty), p.server.StatTask(ctx, req)
+}
+
+func (p *proxy) ExportTask(ctx context.Context, req *dfdaemon.ExportTaskRequest) (*empty.Empty, error) {
+	return new(empty.Empty), p.server.ExportTask(ctx, req)
 }
 
 func send(drc chan *dfdaemon.DownResult, closeDrc func(), stream dfdaemon.Daemon_DownloadServer, errChan chan error) {

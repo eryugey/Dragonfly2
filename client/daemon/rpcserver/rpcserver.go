@@ -217,7 +217,7 @@ func (m *server) Download(ctx context.Context,
 }
 
 func (m *server) ImportTask(ctx context.Context, req *dfdaemongrpc.ImportTaskRequest) error {
-	peerID := idgen.PeerID(m.peerHost.Ip)
+	peerID := peer.LocalCachePeerID
 	taskID := idgen.TaskID(req.Url, req.UrlMeta)
 	log := logger.With("component", "ImportTask", "file", req.Path, "taskID", taskID)
 
@@ -286,7 +286,7 @@ func (m *server) isTaskCompleted(taskID string) bool {
 func (m *server) exportFromLocal(ctx context.Context, _log *logger.SugaredLoggerOnWith, taskID string, req *dfdaemongrpc.ExportTaskRequest) error {
 	return m.storageManager.Store(ctx, &storage.StoreRequest{
 		CommonTaskRequest: storage.CommonTaskRequest{
-			PeerID:      "",
+			PeerID:      peer.LocalCachePeerID,
 			TaskID:      taskID,
 			Destination: req.Path,
 		},
