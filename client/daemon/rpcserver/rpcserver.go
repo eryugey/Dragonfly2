@@ -21,6 +21,7 @@ import (
 	"fmt"
 	"net"
 	"os"
+	"time"
 
 	"github.com/pkg/errors"
 	"google.golang.org/grpc"
@@ -248,7 +249,23 @@ func (m *server) ImportTask(ctx context.Context, req *dfdaemongrpc.ImportTaskReq
 		log.Info("import file succeeded")
 	}
 
-	// TODO: 3. Register to scheduler asynchronously
+	// 3. Register to scheduler asynchronously
+	go func() {
+		start := time.Now()
+		ptr := &scheduler.PeerTaskRequest{
+			Url:      req.Url,
+			UrlMeta:  req.UrlMeta,
+			PeerId:   peerID,
+			PeerHost: m.peerHost,
+		}
+		err := m.peerTaskManager.RegisterTask(context.Background(), ptm, ptr)
+		if err != nil {
+			log.Warn("failed to register task to scheduler: %v", err)
+		} else {
+			log.Info("Register task to scheduler in %.6f seconds", time.Since(start))
+		}
+	}()
+
 	return nil
 }
 

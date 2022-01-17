@@ -26,6 +26,7 @@ import (
 	"time"
 
 	"github.com/go-http-utils/headers"
+	"github.com/pkg/errors"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/trace"
 	"golang.org/x/time/rate"
@@ -56,6 +57,9 @@ type TaskManager interface {
 		readCloser io.ReadCloser, attribute map[string]string, err error)
 
 	IsPeerTaskRunning(pid string) bool
+
+	// Register a fully completed task to P2P network
+	RegisterTask(ctx context.Context, ptm storage.PeerTaskMetadata, req *scheduler.PeerTaskRequest) error
 
 	// Stop stops the PeerTaskManager
 	Stop(ctx context.Context) error
@@ -328,4 +332,16 @@ func (ptm *peerTaskManager) storeTinyPeerTask(ctx context.Context, tiny *TinyDat
 	} else {
 		logger.Debugf("store tiny data, len: %d", l)
 	}
+}
+
+func (ptm *peerTaskManager) RegisterTask(ctx context.Context, meta storage.PeerTaskMetadata, req *scheduler.PeerTaskRequest) error {
+	log := logger.With("component", "RegisterTask", "taskID", meta.TaskID, "peerID", meta.PeerID)
+	// 1. register peer task to scheduler
+	_, err := ptm.schedulerClient.RegisterPeerTask(ctx, req)
+	if err != nil {
+		log.Warn("register peer task failed: %v", err)
+		return errors.Errorf("register peer task failed: %v", err)
+	}
+	// 2. report finished piece result to scheduler
+	return nil
 }
