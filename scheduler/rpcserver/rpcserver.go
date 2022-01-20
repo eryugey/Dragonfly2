@@ -64,6 +64,8 @@ func (s *server) RegisterPeerTask(ctx context.Context, req *scheduler.PeerTaskRe
 	span.SetAttributes(config.AttributePeerRegisterRequest.String(req.String()))
 	span.SetAttributes(config.AttributeTaskID.String(taskID))
 
+	// TODO: req.RegisterOnly
+
 	// Get task or add new task
 	task := s.service.GetOrAddTask(ctx, supervisor.NewTask(taskID, req.Url, req.UrlMeta))
 	if task.IsFail() {

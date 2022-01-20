@@ -106,6 +106,18 @@ func (m *PeerTaskRequest) Validate() error {
 
 	// no validation rules for IsMigrating
 
+	// no validation rules for RegisterOnly
+
+	if v, ok := interface{}(m.GetPiecePacket()).(interface{ Validate() error }); ok {
+		if err := v.Validate(); err != nil {
+			return PeerTaskRequestValidationError{
+				field:  "PiecePacket",
+				reason: "embedded message failed validation",
+				cause:  err,
+			}
+		}
+	}
+
 	return nil
 }
 

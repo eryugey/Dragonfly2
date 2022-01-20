@@ -342,6 +342,6 @@ func (ptm *peerTaskManager) RegisterTask(ctx context.Context, meta storage.PeerT
 		log.Warn("register peer task failed: %v", err)
 		return errors.Errorf("register peer task failed: %v", err)
 	}
-	// 2. report finished piece result to scheduler
+	// TODO: 2. report finished piece result to scheduler
 	return nil
 }

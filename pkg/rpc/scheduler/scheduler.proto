@@ -37,6 +37,10 @@ message PeerTaskRequest{
   base.HostLoad host_load = 5;
   // whether this request is caused by migration
   bool is_migrating = 6;
+  // whether this request is registering a completed task
+  bool register_only = 7;
+  // task's piece info when registering a completed task
+  base.PiecePacket piece_packet = 8;
 }
 
 message RegisterResult{
