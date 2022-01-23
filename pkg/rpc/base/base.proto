@@ -54,6 +54,7 @@ enum Code{
   SchedPeerPieceResultReportFail = 5005; // report piece
   SchedTaskStatusError = 5006; // task status is fail
   SchedPeerNoParent = 5007; // peer has no parent
+  SchedTaskRegisterFail = 5008; // client fails to register task
 
   // cdnsystem response error 6000-6999
   CDNError = 6000;

@@ -64,10 +64,17 @@ func (s *server) RegisterPeerTask(ctx context.Context, req *scheduler.PeerTaskRe
 	span.SetAttributes(config.AttributePeerRegisterRequest.String(req.String()))
 	span.SetAttributes(config.AttributeTaskID.String(taskID))
 
-	// TODO: req.RegisterOnly
+	// If RegisterOnly, client announces to the P2P network that it has the given task
+	if req.RegisterOnly {
+		res, err := s.RegisterCompletedTask(ctx, req)
+		if err != nil {
+			span.RecordError(dferr)
+		}
+		return res, err
+	}
 
 	// Get task or add new task
-	task := s.service.GetOrAddTask(ctx, supervisor.NewTask(taskID, req.Url, req.UrlMeta))
+	task := s.service.GetOrAddTask(ctx, supervisor.NewTask(taskID, req.Url, req.UrlMeta), false)
 	if task.IsFail() {
 		dferr := dferrors.New(base.Code_SchedTaskStatusError, "task status is fail")
 		log.Error(dferr.Message)
@@ -249,4 +256,59 @@ func (s *server) LeaveTask(ctx context.Context, target *scheduler.PeerTarget) (e
 		return
 	}
 	return s.service.HandleLeaveTask(ctx, peer)
+}
+
+func (s *server) RegisterCompletedTask(ctx context.Context, req *scheduler.PeerTaskRequest) (*scheduler.RegisterResult, error) {
+	taskID := idgen.TaskID(req.Url, req.UrlMeta)
+	log := logger.WithTaskAndPeerID(taskID, req.PeerId)
+
+	// TODO: no need to check taskID when using new AnnounceTask() API
+	if taskID != req.PiecePacket.TaskId {
+		msg := fmt.Sprintf("RegisterCompletedTask: task ID doesn't match %s != %s", taskID, req.PiecePacket.TaskId)
+		err := dferrors.New(base.Code_SchedTaskRegisterFail, msg)
+		log.Error(msg)
+		return nil, err
+	}
+
+	// Must contain PiecePacket.PieceInfos
+	if req.PiecePacket == nil || req.PiecePacket.PieceInfos == nil {
+		msg := fmt.Sprintf("RegisterCompletedTask: no piece info found in request: %v", req)
+		err := dferrors.New(base.Code_SchedTaskRegisterFail, msg)
+		log.Error(msg)
+		return nil, err
+	}
+	pieceInfos := req.PiecePacket.PieceInfos
+	totalPiece := req.PiecePacket.TotalPiece
+	contentLength := req.PiecePacket.ContentLength
+
+	// Get task or add new task, and we don't want to trigger schedule
+	task := s.service.GetOrAddTask(ctx, supervisor.NewTask(taskID, req.Url, req.UrlMeta), true)
+	peer := s.service.RegisterTask(req, task)
+
+	// Update task piece infos, and mark task as Success
+	// TODO: make sure pieceInfos count matches req.PiecePacket.TotalPiece
+	for info, _ := range pieceInfos {
+		task.GetOrAddPiece(info)
+	}
+	task.UpdateSuccess(totalPiece, contentLength)
+	task.UpdatePeer(peer)
+
+	// Send peerDownloadSuccessEvent, which will schedule new children to peer
+	peerResult := schedulerRPC.PeerResult{
+		TaskId:          taskID,
+		PeerId:          peerID,
+		SrcIp:           req.PeerHost.Ip,
+		Url:             req.Url,
+		Success:         true,
+		TotalPieceCount: totalPiece,
+		ContentLength:   contentLength,
+		Code:            base.Success,
+	}
+	s.service.HandlePeerResult(ctx, peer, &peerResult)
+
+	// Register done, return result
+	return &scheduler.RegisterResult{
+		TaskId:    taskID,
+		SizeScope: base.SizeScope_NORMAL,
+	}, nil
 }

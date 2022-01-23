@@ -59,7 +59,7 @@ type TaskManager interface {
 	IsPeerTaskRunning(pid string) bool
 
 	// Register a fully completed task to P2P network
-	RegisterTask(ctx context.Context, ptm storage.PeerTaskMetadata, req *scheduler.PeerTaskRequest) error
+	RegisterTask(ctx context.Context, ptm storage.PeerTaskMetadata, url string, urlMeta *base.UrlMeta) error
 
 	// Stop stops the PeerTaskManager
 	Stop(ctx context.Context) error
@@ -334,14 +334,41 @@ func (ptm *peerTaskManager) storeTinyPeerTask(ctx context.Context, tiny *TinyDat
 	}
 }
 
-func (ptm *peerTaskManager) RegisterTask(ctx context.Context, meta storage.PeerTaskMetadata, req *scheduler.PeerTaskRequest) error {
+func (ptm *peerTaskManager) RegisterTask(ctx context.Context, meta storage.PeerTaskMetadata, url string, urlMeta *base.UrlMeta) error {
 	log := logger.With("component", "RegisterTask", "taskID", meta.TaskID, "peerID", meta.PeerID)
-	// 1. register peer task to scheduler
-	_, err := ptm.schedulerClient.RegisterPeerTask(ctx, req)
+
+	// 1. TODO: Check if the given task is completed in local storageManager
+
+	// 2. prepare PeerTaskRequest
+	totalPieces, err := ptm.storageManager.GetTotalPieces(ctx, &meta)
 	if err != nil {
+		log.Errorf("get total pieces failed: %v", err)
+		return errors.Errorf("get total pieces failed: %v", err)
+	}
+	pieceTaskRequest := &base.PieceTaskRequest{
+		TaskId:   meta.TaskID,
+		SrcPid:   meta.PeerID,
+		StartNum: 0,
+		Limit:    uint32(totalPieces),
+	}
+	piecePacket, err := ptm.storageManager.GetPieces(ctx, pieceTaskRequest)
+	if err != nil {
+		log.Errorf("get pieces info failed: %v", err)
+		return errors.Errorf("get pieces info failed: %v", err)
+	}
+	req := &scheduler.PeerTaskRequest{
+		Url:          url,
+		UrlMeta:      urlMeta,
+		PeerId:       meta.PeerID,
+		PeerHost:     ptm.host,
+		RegisterOnly: true,
+		PiecePacket:  piecePacket,
+	}
+
+	// 3. register peer task to scheduler
+	if _, err := ptm.schedulerClient.RegisterPeerTask(ctx, req); err != nil {
 		log.Warn("register peer task failed: %v", err)
 		return errors.Errorf("register peer task failed: %v", err)
 	}
-	// TODO: 2. report finished piece result to scheduler
 	return nil
 }

@@ -249,7 +249,7 @@ func (s *SchedulerService) RegisterTask(req *schedulerRPC.PeerTaskRequest, task 
 	return peer
 }
 
-func (s *SchedulerService) GetOrAddTask(ctx context.Context, task *supervisor.Task) *supervisor.Task {
+func (s *SchedulerService) GetOrAddTask(ctx context.Context, task *supervisor.Task, noTrigger bool) *supervisor.Task {
 	span := trace.SpanFromContext(ctx)
 
 	s.kmu.RLock(task.ID)
@@ -269,6 +269,10 @@ func (s *SchedulerService) GetOrAddTask(ctx context.Context, task *supervisor.Ta
 
 	s.kmu.Lock(task.ID)
 	defer s.kmu.Unlock(task.ID)
+
+	if noTrigger {
+		return task
+	}
 
 	// do trigger
 	span.SetAttributes(config.AttributeTaskStatus.String(task.GetStatus().String()))
