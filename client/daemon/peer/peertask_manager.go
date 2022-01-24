@@ -61,6 +61,8 @@ type TaskManager interface {
 	// Register a fully completed task to P2P network
 	RegisterTask(ctx context.Context, ptm storage.PeerTaskMetadata, url string, urlMeta *base.UrlMeta) error
 
+	StatPeerTask(ctx context.Context, peerID, url string, urlMeta *base.UrlMeta) error
+
 	// Stop stops the PeerTaskManager
 	Stop(ctx context.Context) error
 }
@@ -367,8 +369,22 @@ func (ptm *peerTaskManager) RegisterTask(ctx context.Context, meta storage.PeerT
 
 	// 3. register peer task to scheduler
 	if _, err := ptm.schedulerClient.RegisterPeerTask(ctx, req); err != nil {
-		log.Warn("register peer task failed: %v", err)
+		log.Warnf("register peer task failed: %v", err)
 		return errors.Errorf("register peer task failed: %v", err)
 	}
 	return nil
+}
+
+func (ptm *peerTaskManager) StatPeerTask(ctx context.Context, peerID, url string, urlMeta *base.UrlMeta) error {
+	req := &scheduler.PeerTaskRequest{
+		Url:      url,
+		UrlMeta:  urlMeta,
+		PeerId:   peerID,
+		PeerHost: ptm.host,
+		StatOnly: true,
+	}
+
+	// TODO: scheduler new API StatPeerTask()
+	_, err := ptm.schedulerClient.RegisterPeerTask(ctx, req)
+	return err
 }

@@ -298,6 +298,8 @@ func (m *StatTaskRequest) Validate() error {
 		}
 	}
 
+	// no validation rules for LocalOnly
+
 	return nil
 }
 

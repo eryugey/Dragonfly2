@@ -74,6 +74,7 @@ service Daemon{
 message StatTaskRequest{
   string url = 1 [(validate.rules).string.min_len = 1];
   base.UrlMeta url_meta = 2;
+  bool local_only = 3;
 }
 
 message ImportTaskRequest{

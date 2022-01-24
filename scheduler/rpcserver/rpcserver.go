@@ -68,7 +68,16 @@ func (s *server) RegisterPeerTask(ctx context.Context, req *scheduler.PeerTaskRe
 	if req.RegisterOnly {
 		res, err := s.RegisterCompletedTask(ctx, req)
 		if err != nil {
-			span.RecordError(dferr)
+			span.RecordError(err)
+		}
+		return res, err
+	}
+
+	// If StatOnly, client checks if the given task exists in P2P network.
+	if req.StatOnly {
+		res, err := s.StatCompletedTask(ctx, req)
+		if err != nil {
+			span.RecordError(err)
 		}
 		return res, err
 	}
@@ -287,26 +296,52 @@ func (s *server) RegisterCompletedTask(ctx context.Context, req *scheduler.PeerT
 
 	// Update task piece infos, and mark task as Success
 	// TODO: make sure pieceInfos count matches req.PiecePacket.TotalPiece
-	for info, _ := range pieceInfos {
+	for _, info := range pieceInfos {
 		task.GetOrAddPiece(info)
 	}
 	task.UpdateSuccess(totalPiece, contentLength)
 	task.UpdatePeer(peer)
 
 	// Send peerDownloadSuccessEvent, which will schedule new children to peer
-	peerResult := schedulerRPC.PeerResult{
+	peerResult := scheduler.PeerResult{
 		TaskId:          taskID,
-		PeerId:          peerID,
+		PeerId:          peer.ID,
 		SrcIp:           req.PeerHost.Ip,
 		Url:             req.Url,
 		Success:         true,
 		TotalPieceCount: totalPiece,
 		ContentLength:   contentLength,
-		Code:            base.Success,
+		Code:            base.Code_Success,
 	}
 	s.service.HandlePeerResult(ctx, peer, &peerResult)
 
 	// Register done, return result
+	return &scheduler.RegisterResult{
+		TaskId:    taskID,
+		SizeScope: base.SizeScope_NORMAL,
+	}, nil
+}
+
+func (s *server) StatCompletedTask(ctx context.Context, req *scheduler.PeerTaskRequest) (*scheduler.RegisterResult, error) {
+	taskID := idgen.TaskID(req.Url, req.UrlMeta)
+	log := logger.WithTaskAndPeerID(taskID, req.PeerId)
+
+	// Check if task exists
+	task := s.service.GetTask(ctx, taskID)
+	if task == nil {
+		msg := fmt.Sprintf("StatCompletedTask: task not found: %v", req)
+		err := dferrors.New(base.Code_SchedTaskRegisterFail, msg)
+		log.Info(msg)
+		return nil, err
+	}
+	if !task.IsSuccess() {
+		msg := fmt.Sprintf("StatCompletedTask: task found but status is %s", task.GetStatus())
+		err := dferrors.New(base.Code_SchedTaskRegisterFail, msg)
+		log.Info(msg)
+		return nil, err
+	}
+
+	log.Info("StatCompletedTask: task found in P2P network")
 	return &scheduler.RegisterResult{
 		TaskId:    taskID,
 		SizeScope: base.SizeScope_NORMAL,

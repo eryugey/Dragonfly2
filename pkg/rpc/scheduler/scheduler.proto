@@ -41,6 +41,8 @@ message PeerTaskRequest{
   bool register_only = 7;
   // task's piece info when registering a completed task
   base.PiecePacket piece_packet = 8;
+  // whether this request is checking task exists or not
+  bool stat_only = 9;
 }
 
 message RegisterResult{

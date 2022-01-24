@@ -267,12 +267,12 @@ func (s *SchedulerService) GetOrAddTask(ctx context.Context, task *supervisor.Ta
 	}
 	s.kmu.RUnlock(task.ID)
 
-	s.kmu.Lock(task.ID)
-	defer s.kmu.Unlock(task.ID)
-
 	if noTrigger {
 		return task
 	}
+
+	s.kmu.Lock(task.ID)
+	defer s.kmu.Unlock(task.ID)
 
 	// do trigger
 	span.SetAttributes(config.AttributeTaskStatus.String(task.GetStatus().String()))
@@ -310,6 +310,20 @@ func (s *SchedulerService) GetOrAddTask(ctx context.Context, task *supervisor.Ta
 	}()
 
 	return task
+}
+
+func (s *SchedulerService) GetTask(ctx context.Context, taskID string) *supervisor.Task {
+	span := trace.SpanFromContext(ctx)
+
+	s.kmu.RLock(taskID)
+	defer s.kmu.RUnlock(taskID)
+	task, ok := s.taskManager.Get(taskID)
+	if ok {
+		span.SetAttributes(config.AttributeTaskStatus.String(task.GetStatus().String()))
+		return task
+	} else {
+		return nil
+	}
 }
 
 func (s *SchedulerService) HandlePieceResult(ctx context.Context, peer *supervisor.Peer, pieceResult *schedulerRPC.PieceResult) error {

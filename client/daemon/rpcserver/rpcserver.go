@@ -266,13 +266,24 @@ func (m *server) ImportTask(ctx context.Context, req *dfdaemongrpc.ImportTaskReq
 func (m *server) StatTask(ctx context.Context, req *dfdaemongrpc.StatTaskRequest) error {
 	var err error
 
+	peerID := peer.LocalCachePeerID
 	taskID := idgen.TaskID(req.Url, req.UrlMeta)
 	log := logger.With("component", "StatTask", "taskID", taskID)
 	if completed := m.isTaskCompleted(taskID); !completed {
-		log.Infof("task not found, Url: %s", req.Url)
-		err = status.Errorf(codes.NotFound, "taskID %s not found", taskID)
+		// If only stat local cache and task doesn't exist, return not found
+		if req.LocalOnly {
+			log.Infof("task not found, Url: %s", req.Url)
+			err = status.Errorf(codes.NotFound, "taskID %s not found", taskID)
+		}
+		if lerr := m.statFromPeers(ctx, peerID, req.Url, req.UrlMeta); lerr != nil {
+			err = status.Errorf(codes.NotFound, "taskID %s not found from peers: %v", taskID, err)
+		}
 	}
 	return err
+}
+
+func (m *server) statFromPeers(ctx context.Context, peerID, url string, urlMeta *base.UrlMeta) error {
+	return m.peerTaskManager.StatPeerTask(ctx, peerID, url, urlMeta)
 }
 
 func (m *server) ExportTask(ctx context.Context, req *dfdaemongrpc.ExportTaskRequest) error {

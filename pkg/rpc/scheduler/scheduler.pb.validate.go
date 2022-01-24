@@ -118,6 +118,8 @@ func (m *PeerTaskRequest) Validate() error {
 		}
 	}
 
+	// no validation rules for StatOnly
+
 	return nil
 }
 

@@ -276,6 +276,9 @@ func addStatCmdFlags(cmd *cobra.Command) {
 	flagSet.StringP("statid", "i", cacheConfig.StatID,
 		"Identification of the stated file, could be a hash or a URL")
 
+	flagSet.BoolP("local", "l", cacheConfig.LocalOnly,
+		"Only find local cache, skip P2P network")
+
 	// FIXME: following flags are not working
 	flagSet.StringP("tag", "t", cacheConfig.Tag,
 		"Different tags for the same ID will be divided into different P2P overlay, it conflicts with --digest")
@@ -284,7 +287,7 @@ func addStatCmdFlags(cmd *cobra.Command) {
 
 	flagSet.StringP("workhome", "w", cacheConfig.WorkHome, "Dfget working directory")
 
-	flagSet.StringP("logdir", "l", cacheConfig.LogDir, "Dfget log directory")
+	//flagSet.StringP("logdir", "l", cacheConfig.LogDir, "Dfget log directory")
 
 	if err := viper.BindPFlags(flagSet); err != nil {
 		panic(errors.Wrap(err, "bind dfget flags to viper"))

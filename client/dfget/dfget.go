@@ -432,9 +432,10 @@ func newStatRequest(cfg *config.DfgetConfig) *dfdaemon.StatTaskRequest {
 	return &dfdaemon.StatTaskRequest{
 		Url: cfg.StatID,
 		UrlMeta: &base.UrlMeta{
-			Digest: cfg.Digest,
-			Tag:    cfg.Tag,
+			Digest:    cfg.Digest,
+			Tag:       cfg.Tag,
 		},
+		LocalOnly: cfg.LocalOnly,
 	}
 }
 
