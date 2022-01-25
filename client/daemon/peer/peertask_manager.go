@@ -349,7 +349,7 @@ func (ptm *peerTaskManager) RegisterTask(ctx context.Context, meta storage.PeerT
 	}
 	pieceTaskRequest := &base.PieceTaskRequest{
 		TaskId:   meta.TaskID,
-		SrcPid:   meta.PeerID,
+		DstPid:   meta.PeerID,
 		StartNum: 0,
 		Limit:    uint32(totalPieces),
 	}
@@ -358,6 +358,7 @@ func (ptm *peerTaskManager) RegisterTask(ctx context.Context, meta storage.PeerT
 		log.Errorf("get pieces info failed: %v", err)
 		return errors.Errorf("get pieces info failed: %v", err)
 	}
+	piecePacket.DstAddr = fmt.Sprintf("%s:%d", ptm.host.Ip, ptm.host.DownPort)
 	req := &scheduler.PeerTaskRequest{
 		Url:          url,
 		UrlMeta:      urlMeta,
