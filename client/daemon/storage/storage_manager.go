@@ -553,7 +553,7 @@ func (s *storageManager) ReloadPersistentTask(gcCallback GCCallback) error {
 					Warnf("load task from disk error: %s", err0)
 				continue
 			}
-			logger.Debugf("load task %s/%s from disk, metadata %s, last access: %s, expire time: %s",
+			logger.Debugf("load task %s/%s from disk, metadata %s, last access: %ld, expire time: %s",
 				t.persistentMetadata.TaskID, t.persistentMetadata.PeerID, t.metadataFilePath, t.lastAccess, t.expireTime)
 			s.tasks.Store(PeerTaskMetadata{
 				PeerID: peerID,

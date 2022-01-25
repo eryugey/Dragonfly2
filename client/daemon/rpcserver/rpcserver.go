@@ -251,18 +251,20 @@ func (m *server) ImportTask(ctx context.Context, req *dfdaemongrpc.ImportTaskReq
 
 	// 3. Register to scheduler asynchronously
 	go func() {
+		// TODO: retry register on error
 		start := time.Now()
 		err := m.peerTaskManager.RegisterTask(context.Background(), ptm, req.Url, req.UrlMeta)
 		if err != nil {
-			log.Warn("failed to register task to scheduler: %v", err)
+			log.Warnf("failed to register task to scheduler: %v", err)
 		} else {
-			log.Info("Register task to scheduler in %.6f seconds", time.Since(start))
+			log.Infof("Register task to scheduler in %.6f seconds", time.Since(start))
 		}
 	}()
 
 	return nil
 }
 
+// TODO: StatTask return StatTaskResult not error
 func (m *server) StatTask(ctx context.Context, req *dfdaemongrpc.StatTaskRequest) error {
 	var err error
 
