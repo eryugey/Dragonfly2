@@ -30,3 +30,7 @@ func CDNPeerID(ip string) string {
 func PeerID(ip string) string {
 	return fmt.Sprintf("%s-%d-%s", ip, os.Getpid(), uuid.New())
 }
+
+func CachePeerID(ip string) string {
+	return fmt.Sprintf("%s-cache-peer", ip)
+}
