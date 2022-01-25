@@ -54,16 +54,10 @@ func (m *PeerTaskRequest) Validate() error {
 		return nil
 	}
 
-	if uri, err := url.Parse(m.GetUrl()); err != nil {
+	if utf8.RuneCountInString(m.GetUrl()) < 1 {
 		return PeerTaskRequestValidationError{
 			field:  "Url",
-			reason: "value must be a valid URI",
-			cause:  err,
-		}
-	} else if !uri.IsAbs() {
-		return PeerTaskRequestValidationError{
-			field:  "Url",
-			reason: "value must be absolute",
+			reason: "value length must be at least 1 runes",
 		}
 	}
 
