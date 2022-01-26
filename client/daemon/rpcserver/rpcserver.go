@@ -277,7 +277,7 @@ func (m *server) StatTask(ctx context.Context, req *dfdaemongrpc.StatTaskRequest
 			log.Infof("task not found, Url: %s", req.Url)
 			err = status.Errorf(codes.NotFound, "taskID %s not found", taskID)
 		}
-		if lerr := m.statFromPeers(ctx, peerID, req.Url, req.UrlMeta); lerr != nil {
+		if perr := m.statFromPeers(ctx, peerID, req.Url, req.UrlMeta); perr != nil {
 			err = status.Errorf(codes.NotFound, "taskID %s not found from peers: %v", taskID, err)
 		}
 	}
@@ -320,5 +320,9 @@ func (m *server) exportFromLocal(ctx context.Context, _log *logger.SugaredLogger
 
 // TODO
 func (m *server) exportFromPeers(taskID string) error {
+	peerID := idgen.CachePeerID(m.peerHost.Ip)
+	if perr := m.statFromPeers(ctx, peerID, req.Url, req.UrlMeta); perr != nil {
+		return status.Errorf(codes.NotFound, "taskID %s not found from peers: %v", taskID, err)
+	}
 	return status.Errorf(codes.NotFound, "taskID %s not found from peers", taskID)
 }
