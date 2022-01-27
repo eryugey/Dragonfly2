@@ -88,5 +88,13 @@ message ExportTaskRequest{
   base.UrlMeta url_meta = 2;
   string path = 3 [(validate.rules).string.min_len = 1];
   bool local_only = 4;
+  // user id
+  int64 uid = 5;
+  // group id
+  int64 gid = 6;
+  // timeout duration
+  uint64 timeout = 7 [(validate.rules).uint64.gte = 0];
+  // rate limit in bytes per second
+  double limit = 8 [(validate.rules).double.gte = 0];
   // TODO: other DownRequest common fields
 }

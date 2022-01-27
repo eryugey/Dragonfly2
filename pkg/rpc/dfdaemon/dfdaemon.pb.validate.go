@@ -482,6 +482,24 @@ func (m *ExportTaskRequest) Validate() error {
 
 	// no validation rules for LocalOnly
 
+	// no validation rules for Uid
+
+	// no validation rules for Gid
+
+	if m.GetTimeout() < 0 {
+		return ExportTaskRequestValidationError{
+			field:  "Timeout",
+			reason: "value must be greater than or equal to 0",
+		}
+	}
+
+	if m.GetLimit() < 0 {
+		return ExportTaskRequestValidationError{
+			field:  "Limit",
+			reason: "value must be greater than or equal to 0",
+		}
+	}
+
 	return nil
 }
 

@@ -432,8 +432,8 @@ func newStatRequest(cfg *config.DfgetConfig) *dfdaemon.StatTaskRequest {
 	return &dfdaemon.StatTaskRequest{
 		Url: cfg.StatID,
 		UrlMeta: &base.UrlMeta{
-			Digest:    cfg.Digest,
-			Tag:       cfg.Tag,
+			Digest: cfg.Digest,
+			Tag:    cfg.Tag,
 		},
 		LocalOnly: cfg.LocalOnly,
 	}
@@ -492,5 +492,9 @@ func newExportRequest(cfg *config.DfgetConfig) *dfdaemon.ExportTaskRequest {
 			Digest: cfg.Digest,
 			Tag:    cfg.Tag,
 		},
+		Uid:     int64(basic.UserID),
+		Gid:     int64(basic.UserGroup),
+		Timeout: uint64(cfg.Timeout),
+		Limit:   float64(cfg.RateLimit),
 	}
 }
