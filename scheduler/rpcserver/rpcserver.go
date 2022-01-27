@@ -301,8 +301,10 @@ func (s *server) RegisterCompletedTask(ctx context.Context, req *scheduler.PeerT
 	}
 	task.UpdateSuccess(totalPiece, contentLength)
 	task.UpdatePeer(peer)
+	peer.UpdateProgress(totalPiece, 0)
 
-	// Send peerDownloadSuccessEvent, which will schedule new children to peer
+	// Send peerDownloadSuccessEvent, which will set peer status to success and schedule new
+	// children to peer
 	peerResult := scheduler.PeerResult{
 		TaskId:          taskID,
 		PeerId:          peer.ID,

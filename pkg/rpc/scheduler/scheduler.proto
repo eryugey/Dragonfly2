@@ -141,7 +141,8 @@ message PeerResult{
   string src_ip = 3 [(validate.rules).string.ip = true];
   string security_domain = 4;
   string idc = 5;
-  string url = 6 [(validate.rules).string.uri = true];
+  // TODO: avoid workaround validate url
+  string url = 6 [(validate.rules).string.min_len = 1];
   // total content length(byte)
   int64 content_length = 7;
   // total network traffic(byte)

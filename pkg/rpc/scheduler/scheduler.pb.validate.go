@@ -770,16 +770,10 @@ func (m *PeerResult) Validate() error {
 
 	// no validation rules for Idc
 
-	if uri, err := url.Parse(m.GetUrl()); err != nil {
+	if utf8.RuneCountInString(m.GetUrl()) < 1 {
 		return PeerResultValidationError{
 			field:  "Url",
-			reason: "value must be a valid URI",
-			cause:  err,
-		}
-	} else if !uri.IsAbs() {
-		return PeerResultValidationError{
-			field:  "Url",
-			reason: "value must be absolute",
+			reason: "value length must be at least 1 runes",
 		}
 	}
 
