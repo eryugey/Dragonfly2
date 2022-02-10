@@ -4,6 +4,7 @@ package scheduler
 
 import (
 	context "context"
+	base "d7y.io/dragonfly/v2/pkg/rpc/base"
 	grpc "google.golang.org/grpc"
 	codes "google.golang.org/grpc/codes"
 	status "google.golang.org/grpc/status"
@@ -29,6 +30,8 @@ type SchedulerClient interface {
 	ReportPeerResult(ctx context.Context, in *PeerResult, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	// LeaveTask makes the peer leaving from scheduling overlay for the task.
 	LeaveTask(ctx context.Context, in *PeerTarget, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	// Checks if any peer has the given task
+	StatPeerTask(ctx context.Context, in *StatPeerTaskRequest, opts ...grpc.CallOption) (*base.GrpcDfResult, error)
 }
 
 type schedulerClient struct {
@@ -97,6 +100,15 @@ func (c *schedulerClient) LeaveTask(ctx context.Context, in *PeerTarget, opts ..
 	return out, nil
 }
 
+func (c *schedulerClient) StatPeerTask(ctx context.Context, in *StatPeerTaskRequest, opts ...grpc.CallOption) (*base.GrpcDfResult, error) {
+	out := new(base.GrpcDfResult)
+	err := c.cc.Invoke(ctx, "/scheduler.Scheduler/StatPeerTask", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // SchedulerServer is the server API for Scheduler service.
 // All implementations must embed UnimplementedSchedulerServer
 // for forward compatibility
@@ -111,6 +123,8 @@ type SchedulerServer interface {
 	ReportPeerResult(context.Context, *PeerResult) (*emptypb.Empty, error)
 	// LeaveTask makes the peer leaving from scheduling overlay for the task.
 	LeaveTask(context.Context, *PeerTarget) (*emptypb.Empty, error)
+	// Checks if any peer has the given task
+	StatPeerTask(context.Context, *StatPeerTaskRequest) (*base.GrpcDfResult, error)
 	mustEmbedUnimplementedSchedulerServer()
 }
 
@@ -129,6 +143,9 @@ func (UnimplementedSchedulerServer) ReportPeerResult(context.Context, *PeerResul
 }
 func (UnimplementedSchedulerServer) LeaveTask(context.Context, *PeerTarget) (*emptypb.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method LeaveTask not implemented")
+}
+func (UnimplementedSchedulerServer) StatPeerTask(context.Context, *StatPeerTaskRequest) (*base.GrpcDfResult, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method StatPeerTask not implemented")
 }
 func (UnimplementedSchedulerServer) mustEmbedUnimplementedSchedulerServer() {}
 
@@ -223,6 +240,24 @@ func _Scheduler_LeaveTask_Handler(srv interface{}, ctx context.Context, dec func
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Scheduler_StatPeerTask_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(StatPeerTaskRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(SchedulerServer).StatPeerTask(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/scheduler.Scheduler/StatPeerTask",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(SchedulerServer).StatPeerTask(ctx, req.(*StatPeerTaskRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // Scheduler_ServiceDesc is the grpc.ServiceDesc for Scheduler service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -241,6 +276,10 @@ var Scheduler_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "LeaveTask",
 			Handler:    _Scheduler_LeaveTask_Handler,
+		},
+		{
+			MethodName: "StatPeerTask",
+			Handler:    _Scheduler_StatPeerTask_Handler,
 		},
 	},
 	Streams: []grpc.StreamDesc{
