@@ -32,6 +32,8 @@ type SchedulerClient interface {
 	LeaveTask(ctx context.Context, in *PeerTarget, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	// Checks if any peer has the given task
 	StatPeerTask(ctx context.Context, in *StatPeerTaskRequest, opts ...grpc.CallOption) (*base.GrpcDfResult, error)
+	// A peer announces that it has the announced task to other peers
+	AnnounceTask(ctx context.Context, in *AnnounceTaskRequest, opts ...grpc.CallOption) (*base.GrpcDfResult, error)
 }
 
 type schedulerClient struct {
@@ -109,6 +111,15 @@ func (c *schedulerClient) StatPeerTask(ctx context.Context, in *StatPeerTaskRequ
 	return out, nil
 }
 
+func (c *schedulerClient) AnnounceTask(ctx context.Context, in *AnnounceTaskRequest, opts ...grpc.CallOption) (*base.GrpcDfResult, error) {
+	out := new(base.GrpcDfResult)
+	err := c.cc.Invoke(ctx, "/scheduler.Scheduler/AnnounceTask", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // SchedulerServer is the server API for Scheduler service.
 // All implementations must embed UnimplementedSchedulerServer
 // for forward compatibility
@@ -125,6 +136,8 @@ type SchedulerServer interface {
 	LeaveTask(context.Context, *PeerTarget) (*emptypb.Empty, error)
 	// Checks if any peer has the given task
 	StatPeerTask(context.Context, *StatPeerTaskRequest) (*base.GrpcDfResult, error)
+	// A peer announces that it has the announced task to other peers
+	AnnounceTask(context.Context, *AnnounceTaskRequest) (*base.GrpcDfResult, error)
 	mustEmbedUnimplementedSchedulerServer()
 }
 
@@ -146,6 +159,9 @@ func (UnimplementedSchedulerServer) LeaveTask(context.Context, *PeerTarget) (*em
 }
 func (UnimplementedSchedulerServer) StatPeerTask(context.Context, *StatPeerTaskRequest) (*base.GrpcDfResult, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method StatPeerTask not implemented")
+}
+func (UnimplementedSchedulerServer) AnnounceTask(context.Context, *AnnounceTaskRequest) (*base.GrpcDfResult, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method AnnounceTask not implemented")
 }
 func (UnimplementedSchedulerServer) mustEmbedUnimplementedSchedulerServer() {}
 
@@ -258,6 +274,24 @@ func _Scheduler_StatPeerTask_Handler(srv interface{}, ctx context.Context, dec f
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Scheduler_AnnounceTask_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(AnnounceTaskRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(SchedulerServer).AnnounceTask(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/scheduler.Scheduler/AnnounceTask",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(SchedulerServer).AnnounceTask(ctx, req.(*AnnounceTaskRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // Scheduler_ServiceDesc is the grpc.ServiceDesc for Scheduler service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -280,6 +314,10 @@ var Scheduler_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "StatPeerTask",
 			Handler:    _Scheduler_StatPeerTask_Handler,
+		},
+		{
+			MethodName: "AnnounceTask",
+			Handler:    _Scheduler_AnnounceTask_Handler,
 		},
 	},
 	Streams: []grpc.StreamDesc{

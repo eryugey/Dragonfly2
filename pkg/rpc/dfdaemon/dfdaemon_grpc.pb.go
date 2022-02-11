@@ -28,6 +28,8 @@ type DaemonClient interface {
 	CheckHealth(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	// Check if given task exists in P2P cache system
 	StatTask(ctx context.Context, in *StatTaskRequest, opts ...grpc.CallOption) (*base.GrpcDfResult, error)
+	// Import the given file into P2P cache system
+	ImportTask(ctx context.Context, in *ImportTaskRequest, opts ...grpc.CallOption) (*base.GrpcDfResult, error)
 }
 
 type daemonClient struct {
@@ -97,6 +99,15 @@ func (c *daemonClient) StatTask(ctx context.Context, in *StatTaskRequest, opts .
 	return out, nil
 }
 
+func (c *daemonClient) ImportTask(ctx context.Context, in *ImportTaskRequest, opts ...grpc.CallOption) (*base.GrpcDfResult, error) {
+	out := new(base.GrpcDfResult)
+	err := c.cc.Invoke(ctx, "/dfdaemon.Daemon/ImportTask", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // DaemonServer is the server API for Daemon service.
 // All implementations must embed UnimplementedDaemonServer
 // for forward compatibility
@@ -109,6 +120,8 @@ type DaemonServer interface {
 	CheckHealth(context.Context, *emptypb.Empty) (*emptypb.Empty, error)
 	// Check if given task exists in P2P cache system
 	StatTask(context.Context, *StatTaskRequest) (*base.GrpcDfResult, error)
+	// Import the given file into P2P cache system
+	ImportTask(context.Context, *ImportTaskRequest) (*base.GrpcDfResult, error)
 	mustEmbedUnimplementedDaemonServer()
 }
 
@@ -127,6 +140,9 @@ func (UnimplementedDaemonServer) CheckHealth(context.Context, *emptypb.Empty) (*
 }
 func (UnimplementedDaemonServer) StatTask(context.Context, *StatTaskRequest) (*base.GrpcDfResult, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method StatTask not implemented")
+}
+func (UnimplementedDaemonServer) ImportTask(context.Context, *ImportTaskRequest) (*base.GrpcDfResult, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ImportTask not implemented")
 }
 func (UnimplementedDaemonServer) mustEmbedUnimplementedDaemonServer() {}
 
@@ -216,6 +232,24 @@ func _Daemon_StatTask_Handler(srv interface{}, ctx context.Context, dec func(int
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Daemon_ImportTask_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ImportTaskRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(DaemonServer).ImportTask(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/dfdaemon.Daemon/ImportTask",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(DaemonServer).ImportTask(ctx, req.(*ImportTaskRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // Daemon_ServiceDesc is the grpc.ServiceDesc for Daemon service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -234,6 +268,10 @@ var Daemon_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "StatTask",
 			Handler:    _Daemon_StatTask_Handler,
+		},
+		{
+			MethodName: "ImportTask",
+			Handler:    _Daemon_ImportTask_Handler,
 		},
 	},
 	Streams: []grpc.StreamDesc{
