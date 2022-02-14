@@ -21,6 +21,7 @@ import (
 	"fmt"
 	"net"
 	"os"
+	"sync"
 	"time"
 
 	"github.com/pkg/errors"
@@ -36,9 +37,11 @@ import (
 	"d7y.io/dragonfly/v2/pkg/idgen"
 	"d7y.io/dragonfly/v2/pkg/rpc/base"
 	"d7y.io/dragonfly/v2/pkg/rpc/base/common"
+	"d7y.io/dragonfly/v2/pkg/rpc/dfdaemon"
 	dfdaemongrpc "d7y.io/dragonfly/v2/pkg/rpc/dfdaemon"
 	dfdaemonserver "d7y.io/dragonfly/v2/pkg/rpc/dfdaemon/server"
 	"d7y.io/dragonfly/v2/pkg/rpc/scheduler"
+	"d7y.io/dragonfly/v2/pkg/safe"
 )
 
 type Server interface {
@@ -136,13 +139,22 @@ func (m *server) CheckHealth(context.Context) error {
 
 func (m *server) Download(ctx context.Context,
 	req *dfdaemongrpc.DownRequest, results chan<- *dfdaemongrpc.DownResult) error {
+	return m.doDownload(ctx, req, results, "")
+}
+
+func (m *server) doDownload(ctx context.Context, req *dfdaemongrpc.DownRequest,
+	results chan<- *dfdaemongrpc.DownResult, peerID string) error {
 	m.Keep()
 	// init peer task request, peer uses different peer id to generate every request
+	// if peerID is not specified
+	if peerID == "" {
+		peerID = idgen.PeerID(m.peerHost.Ip)
+	}
 	peerTask := &peer.FileTaskRequest{
 		PeerTaskRequest: scheduler.PeerTaskRequest{
 			Url:      req.Url,
 			UrlMeta:  req.UrlMeta,
-			PeerId:   idgen.PeerID(m.peerHost.Ip),
+			PeerId:   peerID,
 			PeerHost: m.peerHost,
 		},
 		Output:            req.Output,
@@ -306,6 +318,119 @@ func (m *server) ImportTask(ctx context.Context, req *dfdaemongrpc.ImportTaskReq
 	return common.NewGrpcDfResult(base.Code_Success, "import file succeeded"), nil
 }
 
+func (m *server) ExportTask(ctx context.Context, req *dfdaemongrpc.ExportTaskRequest) (*base.GrpcDfResult, error) {
+	taskID := idgen.TaskID(req.Cid, req.UrlMeta)
+	log := logger.With("function", "ExportTask", "Cid", req.Cid, "Tag", req.UrlMeta.Tag, "taskID", taskID, "destination", req.Output)
+
+	log.Info("new export task request")
+	task := m.storageManager.FindCompletedTask(taskID)
+	if task == nil {
+		// If only use local cache and task doesn't exist, return error
+		if req.LocalOnly {
+			log.Info("task not found in local storage")
+			msg := fmt.Sprintf("task not found, taskID %s, cid %s", taskID, req.Cid)
+			return common.NewGrpcDfResult(base.Code_PeerTaskNotFound, msg), nil
+		}
+		log.Info("task not found, try from peers")
+		return m.exportFromPeers(ctx, log, req)
+	}
+	err := m.exportFromLocal(ctx, req, task.PeerID)
+	if err != nil {
+		log.Error("export from local failed: %s", err)
+		return nil, err
+	}
+	return common.NewGrpcDfResult(base.Code_Success, "task exported"), nil
+}
+
 func (m *server) isTaskCompleted(taskID string) bool {
 	return m.storageManager.FindCompletedTask(taskID) != nil
+}
+
+func (m *server) exportFromLocal(ctx context.Context, req *dfdaemongrpc.ExportTaskRequest, peerID string) error {
+	return m.storageManager.Store(ctx, &storage.StoreRequest{
+		CommonTaskRequest: storage.CommonTaskRequest{
+			PeerID:      peerID,
+			TaskID:      idgen.TaskID(req.Cid, req.UrlMeta),
+			Destination: req.Output,
+		},
+		StoreOnly: true,
+	})
+}
+
+func (m *server) exportFromPeers(ctx context.Context, log *logger.SugaredLoggerOnWith, req *dfdaemongrpc.ExportTaskRequest) (*base.GrpcDfResult, error) {
+	peerID := idgen.PeerID(m.peerHost.Ip)
+	taskID := idgen.TaskID(req.Cid, req.UrlMeta)
+
+	res, err := m.peerTaskManager.StatPeerTask(ctx, taskID)
+	if err != nil {
+		msg := fmt.Sprintf("failed to StatPeerTask from peers: %s", err)
+		log.Error(msg)
+		return nil, errors.New(msg)
+	}
+	if res.Code != base.Code_Success {
+		log.Infof("task not found in P2P network")
+		return common.NewGrpcDfResult(res.Code, res.Message), nil
+	}
+
+	var (
+		start     = time.Now()
+		drc       = make(chan *dfdaemongrpc.DownResult, 1)
+		errChan   = make(chan error, 10)
+		result    *dfdaemon.DownResult
+		downError error
+	)
+	downRequest := &dfdaemongrpc.DownRequest{
+		Url:               req.Cid,
+		Output:            req.Output,
+		Timeout:           req.Timeout,
+		Limit:             req.Limit,
+		DisableBackSource: true,
+		UrlMeta:           req.UrlMeta,
+		Pattern:           "",
+		Callsystem:        req.Callsystem,
+		Uid:               req.Uid,
+		Gid:               req.Gid,
+	}
+	once := new(sync.Once)
+	closeDrc := func() {
+		once.Do(func() {
+			close(drc)
+		})
+	}
+	defer closeDrc()
+
+	go call(ctx, peerID, drc, m, downRequest, errChan)
+	go func() {
+		defer closeDrc()
+		for result = range drc {
+			if result.Done {
+				log.Infof("export from peer successfully, length: %d bytes cost: %.6f s", result.CompletedLength, time.Since(start).Seconds())
+				break
+			}
+		}
+		errChan <- dferrors.ErrEndOfStream
+	}()
+
+	if downError = <-errChan; dferrors.IsEndOfStream(downError) {
+		downError = nil
+	}
+
+	if downError != nil {
+		msg := fmt.Sprintf("export from peer failed: %s", downError)
+		log.Error("export from peer failed: %s", downError)
+		return nil, errors.New(msg)
+	}
+	return common.NewGrpcDfResult(base.Code_Success, "task exported"), nil
+}
+
+func call(ctx context.Context, peerID string, drc chan *dfdaemon.DownResult, m *server, req *dfdaemon.DownRequest, errChan chan error) {
+	err := safe.Call(func() {
+		if err := m.doDownload(ctx, req, drc, peerID); err != nil {
+			errChan <- err
+		}
+	})
+
+	if err != nil {
+		errChan <- err
+	}
 }
