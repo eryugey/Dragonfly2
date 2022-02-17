@@ -222,9 +222,11 @@ func (s *scheduler) FindParent(ctx context.Context, peer *resource.Peer, blockli
 // Filter the parent that can be scheduled
 func (s *scheduler) filterParents(peer *resource.Peer, blocklist set.SafeSet) []*resource.Peer {
 	filterParentLimit := config.DefaultSchedulerFilterParentLimit
-	if config, ok := s.dynconfig.GetSchedulerClusterConfig(); ok && filterParentLimit > 0 {
-		filterParentLimit = int(config.FilterParentLimit)
-	}
+	/*
+		if config, ok := s.dynconfig.GetSchedulerClusterConfig(); ok && filterParentLimit > 0 {
+			filterParentLimit = int(config.FilterParentLimit)
+		}
+	*/
 
 	var parents []*resource.Peer
 	var parentIDs []string
@@ -301,9 +303,11 @@ func (s *scheduler) filterParents(peer *resource.Peer, blocklist set.SafeSet) []
 // Construct peer successful packet
 func constructSuccessPeerPacket(dynconfig config.DynconfigInterface, peer *resource.Peer, parent *resource.Peer, candidateParents []*resource.Peer) *rpcscheduler.PeerPacket {
 	parallelCount := config.DefaultClientParallelCount
-	if config, ok := dynconfig.GetSchedulerClusterClientConfig(); ok && config.ParallelCount > 0 {
-		parallelCount = int(config.ParallelCount)
-	}
+	/*
+		if config, ok := dynconfig.GetSchedulerClusterClientConfig(); ok && config.ParallelCount > 0 {
+			parallelCount = int(config.ParallelCount)
+		}
+	*/
 
 	var stealPeers []*rpcscheduler.PeerPacket_DestPeer
 	for _, candidateParent := range candidateParents {

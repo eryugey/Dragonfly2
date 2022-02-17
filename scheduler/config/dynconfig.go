@@ -147,6 +147,9 @@ func NewDynconfig(rawManagerClient managerclient.Client, cacheDir string, cfg *C
 }
 
 func (d *dynconfig) GetSchedulerClusterConfig() (types.SchedulerClusterConfig, bool) {
+	if d == nil {
+		return types.SchedulerClusterConfig{}, false
+	}
 	data, err := d.Get()
 	if err != nil {
 		return types.SchedulerClusterConfig{}, false
@@ -165,6 +168,9 @@ func (d *dynconfig) GetSchedulerClusterConfig() (types.SchedulerClusterConfig, b
 }
 
 func (d *dynconfig) GetSchedulerClusterClientConfig() (types.SchedulerClusterClientConfig, bool) {
+	if d == nil {
+		return types.SchedulerClusterClientConfig{}, false
+	}
 	data, err := d.Get()
 	if err != nil {
 		return types.SchedulerClusterClientConfig{}, false
@@ -183,6 +189,9 @@ func (d *dynconfig) GetSchedulerClusterClientConfig() (types.SchedulerClusterCli
 }
 
 func (d *dynconfig) GetCDNClusterConfig(id uint) (types.CDNClusterConfig, bool) {
+	if d == nil {
+		return types.CDNClusterConfig{}, false
+	}
 	data, err := d.Get()
 	if err != nil {
 		return types.CDNClusterConfig{}, false
@@ -202,20 +211,22 @@ func (d *dynconfig) GetCDNClusterConfig(id uint) (types.CDNClusterConfig, bool) 
 
 func (d *dynconfig) Get() (*DynconfigData, error) {
 	var config DynconfigData
-	if d.cdnDir != "" {
-		cdns, err := d.getCDNFromDirPath()
-		if err != nil {
+	return &config, nil
+	/*
+		if d.cdnDir != "" {
+			cdns, err := d.getCDNFromDirPath()
+			if err != nil {
+				return nil, err
+			}
+			config.CDNs = cdns
+			return &config, nil
+		}
+
+		if err := d.Unmarshal(&config); err != nil {
 			return nil, err
 		}
-		config.CDNs = cdns
 		return &config, nil
-	}
-
-	if err := d.Unmarshal(&config); err != nil {
-		return nil, err
-	}
-
-	return &config, nil
+	*/
 }
 
 func (d *dynconfig) getCDNFromDirPath() ([]*CDN, error) {
@@ -268,6 +279,9 @@ func (d *dynconfig) Deregister(l Observer) {
 }
 
 func (d *dynconfig) Notify() error {
+	if d == nil {
+		return nil
+	}
 	config, err := d.Get()
 	if err != nil {
 		return err

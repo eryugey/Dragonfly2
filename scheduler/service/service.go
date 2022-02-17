@@ -515,9 +515,11 @@ func (s *Service) registerHost(ctx context.Context, rawHost *rpcscheduler.PeerHo
 	if !ok {
 		// Get scheduler cluster client config by manager
 		var options []resource.HostOption
-		if clientConfig, ok := s.dynconfig.GetSchedulerClusterClientConfig(); ok && clientConfig.LoadLimit > 0 {
-			options = append(options, resource.WithUploadLoadLimit(int32(clientConfig.LoadLimit)))
-		}
+		/*
+			if clientConfig, ok := s.dynconfig.GetSchedulerClusterClientConfig(); ok && clientConfig.LoadLimit > 0 {
+				options = append(options, resource.WithUploadLoadLimit(int32(clientConfig.LoadLimit)))
+			}
+		*/
 
 		host = resource.NewHost(rawHost, options...)
 		s.resource.HostManager().Store(host)
