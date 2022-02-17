@@ -185,30 +185,35 @@ type cdnClient struct {
 
 // New cdn client interface
 func newCDNClient(dynconfig config.DynconfigInterface, hostManager HostManager, opts ...grpc.DialOption) (CDNClient, error) {
-	config, err := dynconfig.Get()
-	if err != nil {
-		return nil, err
-	}
+	var cc cdnClient
+	return &cc, nil
 
-	// Initialize cdn grpc client
-	client, err := cdnclient.GetClientByAddr(cdnsToNetAddrs(config.CDNs), opts...)
-	if err != nil {
-		return nil, err
-	}
+	/*
+		config, err := dynconfig.Get()
+		if err != nil {
+			return nil, err
+		}
 
-	// Initialize cdn hosts
-	for _, host := range cdnsToHosts(config.CDNs) {
-		hostManager.Store(host)
-	}
+		// Initialize cdn grpc client
+		client, err := cdnclient.GetClientByAddr(cdnsToNetAddrs(config.CDNs), opts...)
+		if err != nil {
+			return nil, err
+		}
 
-	dc := &cdnClient{
-		hostManager: hostManager,
-		CdnClient:   client,
-		data:        config,
-	}
+		// Initialize cdn hosts
+		for _, host := range cdnsToHosts(config.CDNs) {
+			hostManager.Store(host)
+		}
 
-	dynconfig.Register(dc)
-	return dc, nil
+		dc := &cdnClient{
+			hostManager: hostManager,
+			CdnClient:   client,
+			data:        config,
+		}
+
+		dynconfig.Register(dc)
+		return dc, nil
+	*/
 }
 
 // Dynamic config notify function
