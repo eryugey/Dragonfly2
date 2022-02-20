@@ -181,3 +181,20 @@ func InitDfget(console bool, dir string) error {
 
 	return createLogger(console, meta, logDir)
 }
+
+func InitDfcache(console bool, dir string) error {
+	logDir := filepath.Join(dir, "dfcache")
+
+	var meta = []logInitMeta{
+		{
+			fileName:             CoreLogFileName,
+			setSugaredLoggerFunc: SetCoreLogger,
+		},
+		{
+			fileName:             GrpcLogFileName,
+			setSugaredLoggerFunc: SetGrpcLogger,
+		},
+	}
+
+	return createLogger(console, meta, logDir)
+}
