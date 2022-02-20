@@ -87,6 +87,8 @@ type Manager interface {
 	clientutil.KeepAlive
 	// RegisterTask registers a task in storage driver
 	RegisterTask(ctx context.Context, req RegisterTaskRequest) (TaskStorageDriver, error)
+	// UnregisterTask unregisters a task in storage driver
+	UnregisterTask(ctx context.Context, req CommonTaskRequest) error
 	// FindCompletedTask try to find a completed task for fast path
 	FindCompletedTask(taskID string) *ReusePeerTask
 	// CleanUp cleans all storage data
@@ -296,6 +298,15 @@ func (s *storageManager) GetTotalPieces(ctx context.Context, req *PeerTaskMetada
 func (s *storageManager) LoadTask(meta PeerTaskMetadata) (TaskStorageDriver, bool) {
 	s.Keep()
 	d, ok := s.tasks.Load(meta)
+	if !ok {
+		return nil, false
+	}
+	return d.(TaskStorageDriver), ok
+}
+
+func (s *storageManager) LoadAndDeleteTask(meta PeerTaskMetadata) (TaskStorageDriver, bool) {
+	s.Keep()
+	d, ok := s.tasks.LoadAndDelete(meta)
 	if !ok {
 		return nil, false
 	}
@@ -712,6 +723,26 @@ func (s *storageManager) TryGC() (bool, error) {
 	return true, nil
 }
 
+func (s *storageManager) deleteTask(meta PeerTaskMetadata) error {
+	task, ok := s.LoadAndDeleteTask(meta)
+	if !ok {
+		logger.Infof("deleteTask: task meta not found: %v", meta)
+		return nil
+	}
+
+	logger.Debugf("deleteTask: deleting task: %v", meta)
+	s.cleanIndex(meta.TaskID, meta.PeerID)
+	task.(*localTaskStore).MarkReclaim()
+	return task.(*localTaskStore).Reclaim()
+}
+
+func (s *storageManager) UnregisterTask(ctx context.Context, req CommonTaskRequest) error {
+	return s.deleteTask(PeerTaskMetadata{
+		TaskID: req.TaskID,
+		PeerID: req.PeerID,
+	})
+}
+
 func (s *storageManager) CleanUp() {
 	_, _ = s.forceGC()
 }
@@ -719,10 +750,7 @@ func (s *storageManager) CleanUp() {
 func (s *storageManager) forceGC() (bool, error) {
 	s.tasks.Range(func(key, task interface{}) bool {
 		meta := key.(PeerTaskMetadata)
-		s.tasks.Delete(meta)
-		s.cleanIndex(meta.TaskID, meta.PeerID)
-		task.(*localTaskStore).MarkReclaim()
-		err := task.(*localTaskStore).Reclaim()
+		err := s.deleteTask(meta)
 		if err != nil {
 			logger.Errorf("gc task store %s error: %s", key, err)
 		}
