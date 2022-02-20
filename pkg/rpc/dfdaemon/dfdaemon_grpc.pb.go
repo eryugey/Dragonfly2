@@ -32,6 +32,8 @@ type DaemonClient interface {
 	ImportTask(ctx context.Context, in *ImportTaskRequest, opts ...grpc.CallOption) (*base.GrpcDfResult, error)
 	// Export or download file from P2P cache system
 	ExportTask(ctx context.Context, in *ExportTaskRequest, opts ...grpc.CallOption) (*base.GrpcDfResult, error)
+	// Delete file from P2P cache system
+	DeleteTask(ctx context.Context, in *DeleteTaskRequest, opts ...grpc.CallOption) (*base.GrpcDfResult, error)
 }
 
 type daemonClient struct {
@@ -119,6 +121,15 @@ func (c *daemonClient) ExportTask(ctx context.Context, in *ExportTaskRequest, op
 	return out, nil
 }
 
+func (c *daemonClient) DeleteTask(ctx context.Context, in *DeleteTaskRequest, opts ...grpc.CallOption) (*base.GrpcDfResult, error) {
+	out := new(base.GrpcDfResult)
+	err := c.cc.Invoke(ctx, "/dfdaemon.Daemon/DeleteTask", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // DaemonServer is the server API for Daemon service.
 // All implementations must embed UnimplementedDaemonServer
 // for forward compatibility
@@ -135,6 +146,8 @@ type DaemonServer interface {
 	ImportTask(context.Context, *ImportTaskRequest) (*base.GrpcDfResult, error)
 	// Export or download file from P2P cache system
 	ExportTask(context.Context, *ExportTaskRequest) (*base.GrpcDfResult, error)
+	// Delete file from P2P cache system
+	DeleteTask(context.Context, *DeleteTaskRequest) (*base.GrpcDfResult, error)
 	mustEmbedUnimplementedDaemonServer()
 }
 
@@ -159,6 +172,9 @@ func (UnimplementedDaemonServer) ImportTask(context.Context, *ImportTaskRequest)
 }
 func (UnimplementedDaemonServer) ExportTask(context.Context, *ExportTaskRequest) (*base.GrpcDfResult, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ExportTask not implemented")
+}
+func (UnimplementedDaemonServer) DeleteTask(context.Context, *DeleteTaskRequest) (*base.GrpcDfResult, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method DeleteTask not implemented")
 }
 func (UnimplementedDaemonServer) mustEmbedUnimplementedDaemonServer() {}
 
@@ -284,6 +300,24 @@ func _Daemon_ExportTask_Handler(srv interface{}, ctx context.Context, dec func(i
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Daemon_DeleteTask_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(DeleteTaskRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(DaemonServer).DeleteTask(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/dfdaemon.Daemon/DeleteTask",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(DaemonServer).DeleteTask(ctx, req.(*DeleteTaskRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // Daemon_ServiceDesc is the grpc.ServiceDesc for Daemon service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -310,6 +344,10 @@ var Daemon_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "ExportTask",
 			Handler:    _Daemon_ExportTask_Handler,
+		},
+		{
+			MethodName: "DeleteTask",
+			Handler:    _Daemon_DeleteTask_Handler,
 		},
 	},
 	Streams: []grpc.StreamDesc{
