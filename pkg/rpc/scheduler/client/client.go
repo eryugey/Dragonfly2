@@ -60,7 +60,7 @@ type SchedulerClient interface {
 
 	LeaveTask(context.Context, *scheduler.PeerTarget, ...grpc.CallOption) error
 
-	StatPeerTask(context.Context, *scheduler.StatPeerTaskRequest, ...grpc.CallOption) error
+	StatTask(context.Context, *scheduler.StatTaskRequest, ...grpc.CallOption) (*scheduler.Task, error)
 
 	AnnounceTask(context.Context, *scheduler.AnnounceTaskRequest, ...grpc.CallOption) error
 
@@ -248,7 +248,7 @@ func (sc *schedulerClient) LeaveTask(ctx context.Context, pt *scheduler.PeerTarg
 	return
 }
 
-func (sc *schedulerClient) StatPeerTask(ctx context.Context, req *scheduler.StatPeerTaskRequest, opts ...grpc.CallOption) error {
+func (sc *schedulerClient) StatTask(ctx context.Context, req *scheduler.StatTaskRequest, opts ...grpc.CallOption) (*scheduler.Task, error) {
 	var schedulerNode string
 	statFunc := func() (interface{}, error) {
 		var client scheduler.SchedulerClient
@@ -257,49 +257,54 @@ func (sc *schedulerClient) StatPeerTask(ctx context.Context, req *scheduler.Stat
 		if err != nil {
 			return nil, err
 		}
-		return client.StatPeerTask(ctx, req, opts...)
+		return client.StatTask(ctx, req, opts...)
 	}
-	_, err := rpc.ExecuteWithRetry(statFunc, 0.1, 0.5, 2, nil)
+
+	res, err := rpc.ExecuteWithRetry(statFunc, 0.1, 0.5, 2, nil)
 	if err != nil {
 		// DfError means scheduler responds request correctly
 		if _, ok := err.(*dferrors.DfError); ok {
-			return err
+			return nil, err
 		}
 		logger.WithTaskID(req.TaskId).Errorf("StatPeerTask: stat peer task to scheduler %s failed: %v", schedulerNode, err)
-		return sc.retryStatPeerTask(ctx, req, []string{schedulerNode}, err, opts)
+		return sc.retryStatTask(ctx, req, []string{schedulerNode}, err, opts)
 	}
-	return nil
+
+	return res.(*scheduler.Task), nil
 }
 
-func (sc *schedulerClient) retryStatPeerTask(ctx context.Context, req *scheduler.StatPeerTaskRequest, exclusiveNodes []string, cause error,
-	opts []grpc.CallOption) error {
+func (sc *schedulerClient) retryStatTask(ctx context.Context, req *scheduler.StatTaskRequest, exclusiveNodes []string, cause error,
+	opts []grpc.CallOption) (*scheduler.Task, error) {
 	if status.Code(cause) == codes.Canceled || status.Code(cause) == codes.DeadlineExceeded {
-		return cause
+		return nil, cause
 	}
+
 	var schedulerNode string
 	preNode, err := sc.TryMigrate(req.TaskId, cause, exclusiveNodes)
 	if err != nil {
-		return cause
+		return nil, cause
 	}
+
 	exclusiveNodes = append(exclusiveNodes, preNode)
-	_, err = rpc.ExecuteWithRetry(func() (interface{}, error) {
+	res, err := rpc.ExecuteWithRetry(func() (interface{}, error) {
 		var client scheduler.SchedulerClient
 		var err error
 		client, schedulerNode, err = sc.getSchedulerClient(req.TaskId, true)
 		if err != nil {
 			return nil, err
 		}
-		return client.StatPeerTask(ctx, req, opts...)
+		return client.StatTask(ctx, req, opts...)
 	}, 0.1, 0.5, 2, cause)
 	if err != nil {
 		// DfError means scheduler responds request correctly
 		if _, ok := err.(*dferrors.DfError); ok {
-			return err
+			return nil, err
 		}
 		logger.WithTaskID(req.TaskId).Errorf("retryStatPeerTask: stat peer task to scheduler %s failed: %v", schedulerNode, err)
-		return sc.retryStatPeerTask(ctx, req, exclusiveNodes, err, opts)
+		return sc.retryStatTask(ctx, req, exclusiveNodes, err, opts)
 	}
-	return nil
+
+	return res.(*scheduler.Task), nil
 }
 
 func (sc *schedulerClient) AnnounceTask(ctx context.Context, req *scheduler.AnnounceTaskRequest,
