@@ -137,20 +137,20 @@ var _ interface {
 	ErrorName() string
 } = DfCacheReqValidationError{}
 
-// Validate checks the field values on ProxyClientPacket with the rules defined
-// in the proto definition for this message. If any rules are violated, an
-// error is returned.
-func (m *ProxyClientPacket) Validate() error {
+// Validate checks the field values on DaemonProxyClientPacket with the rules
+// defined in the proto definition for this message. If any rules are
+// violated, an error is returned.
+func (m *DaemonProxyClientPacket) Validate() error {
 	if m == nil {
 		return nil
 	}
 
 	// no validation rules for Type
 
-	if v, ok := interface{}(m.GetResult()).(interface{ Validate() error }); ok {
+	if v, ok := interface{}(m.GetError()).(interface{ Validate() error }); ok {
 		if err := v.Validate(); err != nil {
-			return ProxyClientPacketValidationError{
-				field:  "Result",
+			return DaemonProxyClientPacketValidationError{
+				field:  "Error",
 				reason: "embedded message failed validation",
 				cause:  err,
 			}
@@ -160,9 +160,9 @@ func (m *ProxyClientPacket) Validate() error {
 	return nil
 }
 
-// ProxyClientPacketValidationError is the validation error returned by
-// ProxyClientPacket.Validate if the designated constraints aren't met.
-type ProxyClientPacketValidationError struct {
+// DaemonProxyClientPacketValidationError is the validation error returned by
+// DaemonProxyClientPacket.Validate if the designated constraints aren't met.
+type DaemonProxyClientPacketValidationError struct {
 	field  string
 	reason string
 	cause  error
@@ -170,24 +170,24 @@ type ProxyClientPacketValidationError struct {
 }
 
 // Field function returns field value.
-func (e ProxyClientPacketValidationError) Field() string { return e.field }
+func (e DaemonProxyClientPacketValidationError) Field() string { return e.field }
 
 // Reason function returns reason value.
-func (e ProxyClientPacketValidationError) Reason() string { return e.reason }
+func (e DaemonProxyClientPacketValidationError) Reason() string { return e.reason }
 
 // Cause function returns cause value.
-func (e ProxyClientPacketValidationError) Cause() error { return e.cause }
+func (e DaemonProxyClientPacketValidationError) Cause() error { return e.cause }
 
 // Key function returns key value.
-func (e ProxyClientPacketValidationError) Key() bool { return e.key }
+func (e DaemonProxyClientPacketValidationError) Key() bool { return e.key }
 
 // ErrorName returns error name.
-func (e ProxyClientPacketValidationError) ErrorName() string {
-	return "ProxyClientPacketValidationError"
+func (e DaemonProxyClientPacketValidationError) ErrorName() string {
+	return "DaemonProxyClientPacketValidationError"
 }
 
 // Error satisfies the builtin error interface
-func (e ProxyClientPacketValidationError) Error() string {
+func (e DaemonProxyClientPacketValidationError) Error() string {
 	cause := ""
 	if e.cause != nil {
 		cause = fmt.Sprintf(" | caused by: %v", e.cause)
@@ -199,14 +199,14 @@ func (e ProxyClientPacketValidationError) Error() string {
 	}
 
 	return fmt.Sprintf(
-		"invalid %sProxyClientPacket.%s: %s%s",
+		"invalid %sDaemonProxyClientPacket.%s: %s%s",
 		key,
 		e.field,
 		e.reason,
 		cause)
 }
 
-var _ error = ProxyClientPacketValidationError{}
+var _ error = DaemonProxyClientPacketValidationError{}
 
 var _ interface {
 	Field() string
@@ -214,12 +214,12 @@ var _ interface {
 	Key() bool
 	Cause() error
 	ErrorName() string
-} = ProxyClientPacketValidationError{}
+} = DaemonProxyClientPacketValidationError{}
 
-// Validate checks the field values on ProxyServerPacket with the rules defined
-// in the proto definition for this message. If any rules are violated, an
-// error is returned.
-func (m *ProxyServerPacket) Validate() error {
+// Validate checks the field values on DaemonProxyServerPacket with the rules
+// defined in the proto definition for this message. If any rules are
+// violated, an error is returned.
+func (m *DaemonProxyServerPacket) Validate() error {
 	if m == nil {
 		return nil
 	}
@@ -228,7 +228,7 @@ func (m *ProxyServerPacket) Validate() error {
 
 	if v, ok := interface{}(m.GetCacheReq()).(interface{ Validate() error }); ok {
 		if err := v.Validate(); err != nil {
-			return ProxyServerPacketValidationError{
+			return DaemonProxyServerPacketValidationError{
 				field:  "CacheReq",
 				reason: "embedded message failed validation",
 				cause:  err,
@@ -239,9 +239,9 @@ func (m *ProxyServerPacket) Validate() error {
 	return nil
 }
 
-// ProxyServerPacketValidationError is the validation error returned by
-// ProxyServerPacket.Validate if the designated constraints aren't met.
-type ProxyServerPacketValidationError struct {
+// DaemonProxyServerPacketValidationError is the validation error returned by
+// DaemonProxyServerPacket.Validate if the designated constraints aren't met.
+type DaemonProxyServerPacketValidationError struct {
 	field  string
 	reason string
 	cause  error
@@ -249,24 +249,24 @@ type ProxyServerPacketValidationError struct {
 }
 
 // Field function returns field value.
-func (e ProxyServerPacketValidationError) Field() string { return e.field }
+func (e DaemonProxyServerPacketValidationError) Field() string { return e.field }
 
 // Reason function returns reason value.
-func (e ProxyServerPacketValidationError) Reason() string { return e.reason }
+func (e DaemonProxyServerPacketValidationError) Reason() string { return e.reason }
 
 // Cause function returns cause value.
-func (e ProxyServerPacketValidationError) Cause() error { return e.cause }
+func (e DaemonProxyServerPacketValidationError) Cause() error { return e.cause }
 
 // Key function returns key value.
-func (e ProxyServerPacketValidationError) Key() bool { return e.key }
+func (e DaemonProxyServerPacketValidationError) Key() bool { return e.key }
 
 // ErrorName returns error name.
-func (e ProxyServerPacketValidationError) ErrorName() string {
-	return "ProxyServerPacketValidationError"
+func (e DaemonProxyServerPacketValidationError) ErrorName() string {
+	return "DaemonProxyServerPacketValidationError"
 }
 
 // Error satisfies the builtin error interface
-func (e ProxyServerPacketValidationError) Error() string {
+func (e DaemonProxyServerPacketValidationError) Error() string {
 	cause := ""
 	if e.cause != nil {
 		cause = fmt.Sprintf(" | caused by: %v", e.cause)
@@ -278,14 +278,14 @@ func (e ProxyServerPacketValidationError) Error() string {
 	}
 
 	return fmt.Sprintf(
-		"invalid %sProxyServerPacket.%s: %s%s",
+		"invalid %sDaemonProxyServerPacket.%s: %s%s",
 		key,
 		e.field,
 		e.reason,
 		cause)
 }
 
-var _ error = ProxyServerPacketValidationError{}
+var _ error = DaemonProxyServerPacketValidationError{}
 
 var _ interface {
 	Field() string
@@ -293,4 +293,4 @@ var _ interface {
 	Key() bool
 	Cause() error
 	ErrorName() string
-} = ProxyServerPacketValidationError{}
+} = DaemonProxyServerPacketValidationError{}

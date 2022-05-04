@@ -167,17 +167,17 @@ func (x *DfCacheReq) GetDeleteTask() *dfdaemon.DeleteTaskRequest {
 	return nil
 }
 
-type ProxyClientPacket struct {
+type DaemonProxyClientPacket struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	Type   ReqType           `protobuf:"varint,1,opt,name=type,proto3,enum=dfproxy.ReqType" json:"type,omitempty"`
-	Result *base.GrpcDfError `protobuf:"bytes,2,opt,name=result,proto3" json:"result,omitempty"`
+	Type  ReqType           `protobuf:"varint,1,opt,name=type,proto3,enum=dfproxy.ReqType" json:"type,omitempty"`
+	Error *base.GrpcDfError `protobuf:"bytes,2,opt,name=error,proto3" json:"error,omitempty"`
 }
 
-func (x *ProxyClientPacket) Reset() {
-	*x = ProxyClientPacket{}
+func (x *DaemonProxyClientPacket) Reset() {
+	*x = DaemonProxyClientPacket{}
 	if protoimpl.UnsafeEnabled {
 		mi := &file_pkg_rpc_dfproxy_dfproxy_proto_msgTypes[1]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -185,13 +185,13 @@ func (x *ProxyClientPacket) Reset() {
 	}
 }
 
-func (x *ProxyClientPacket) String() string {
+func (x *DaemonProxyClientPacket) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*ProxyClientPacket) ProtoMessage() {}
+func (*DaemonProxyClientPacket) ProtoMessage() {}
 
-func (x *ProxyClientPacket) ProtoReflect() protoreflect.Message {
+func (x *DaemonProxyClientPacket) ProtoReflect() protoreflect.Message {
 	mi := &file_pkg_rpc_dfproxy_dfproxy_proto_msgTypes[1]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -203,26 +203,26 @@ func (x *ProxyClientPacket) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use ProxyClientPacket.ProtoReflect.Descriptor instead.
-func (*ProxyClientPacket) Descriptor() ([]byte, []int) {
+// Deprecated: Use DaemonProxyClientPacket.ProtoReflect.Descriptor instead.
+func (*DaemonProxyClientPacket) Descriptor() ([]byte, []int) {
 	return file_pkg_rpc_dfproxy_dfproxy_proto_rawDescGZIP(), []int{1}
 }
 
-func (x *ProxyClientPacket) GetType() ReqType {
+func (x *DaemonProxyClientPacket) GetType() ReqType {
 	if x != nil {
 		return x.Type
 	}
 	return ReqType_HeartBeat
 }
 
-func (x *ProxyClientPacket) GetResult() *base.GrpcDfError {
+func (x *DaemonProxyClientPacket) GetError() *base.GrpcDfError {
 	if x != nil {
-		return x.Result
+		return x.Error
 	}
 	return nil
 }
 
-type ProxyServerPacket struct {
+type DaemonProxyServerPacket struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
@@ -231,8 +231,8 @@ type ProxyServerPacket struct {
 	CacheReq *DfCacheReq `protobuf:"bytes,2,opt,name=cache_req,json=cacheReq,proto3" json:"cache_req,omitempty"`
 }
 
-func (x *ProxyServerPacket) Reset() {
-	*x = ProxyServerPacket{}
+func (x *DaemonProxyServerPacket) Reset() {
+	*x = DaemonProxyServerPacket{}
 	if protoimpl.UnsafeEnabled {
 		mi := &file_pkg_rpc_dfproxy_dfproxy_proto_msgTypes[2]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -240,13 +240,13 @@ func (x *ProxyServerPacket) Reset() {
 	}
 }
 
-func (x *ProxyServerPacket) String() string {
+func (x *DaemonProxyServerPacket) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*ProxyServerPacket) ProtoMessage() {}
+func (*DaemonProxyServerPacket) ProtoMessage() {}
 
-func (x *ProxyServerPacket) ProtoReflect() protoreflect.Message {
+func (x *DaemonProxyServerPacket) ProtoReflect() protoreflect.Message {
 	mi := &file_pkg_rpc_dfproxy_dfproxy_proto_msgTypes[2]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -258,19 +258,19 @@ func (x *ProxyServerPacket) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use ProxyServerPacket.ProtoReflect.Descriptor instead.
-func (*ProxyServerPacket) Descriptor() ([]byte, []int) {
+// Deprecated: Use DaemonProxyServerPacket.ProtoReflect.Descriptor instead.
+func (*DaemonProxyServerPacket) Descriptor() ([]byte, []int) {
 	return file_pkg_rpc_dfproxy_dfproxy_proto_rawDescGZIP(), []int{2}
 }
 
-func (x *ProxyServerPacket) GetType() ReqType {
+func (x *DaemonProxyServerPacket) GetType() ReqType {
 	if x != nil {
 		return x.Type
 	}
 	return ReqType_HeartBeat
 }
 
-func (x *ProxyServerPacket) GetCacheReq() *DfCacheReq {
+func (x *DaemonProxyServerPacket) GetCacheReq() *DfCacheReq {
 	if x != nil {
 		return x.CacheReq
 	}
@@ -302,34 +302,35 @@ var file_pkg_rpc_dfproxy_dfproxy_proto_rawDesc = []byte{
 	0x74, 0x61, 0x73, 0x6b, 0x18, 0x04, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x1b, 0x2e, 0x64, 0x66, 0x64,
 	0x61, 0x65, 0x6d, 0x6f, 0x6e, 0x2e, 0x44, 0x65, 0x6c, 0x65, 0x74, 0x65, 0x54, 0x61, 0x73, 0x6b,
 	0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x52, 0x0a, 0x64, 0x65, 0x6c, 0x65, 0x74, 0x65, 0x54,
-	0x61, 0x73, 0x6b, 0x22, 0x64, 0x0a, 0x11, 0x50, 0x72, 0x6f, 0x78, 0x79, 0x43, 0x6c, 0x69, 0x65,
-	0x6e, 0x74, 0x50, 0x61, 0x63, 0x6b, 0x65, 0x74, 0x12, 0x24, 0x0a, 0x04, 0x74, 0x79, 0x70, 0x65,
-	0x18, 0x01, 0x20, 0x01, 0x28, 0x0e, 0x32, 0x10, 0x2e, 0x64, 0x66, 0x70, 0x72, 0x6f, 0x78, 0x79,
-	0x2e, 0x52, 0x65, 0x71, 0x54, 0x79, 0x70, 0x65, 0x52, 0x04, 0x74, 0x79, 0x70, 0x65, 0x12, 0x29,
-	0x0a, 0x06, 0x72, 0x65, 0x73, 0x75, 0x6c, 0x74, 0x18, 0x02, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x11,
-	0x2e, 0x62, 0x61, 0x73, 0x65, 0x2e, 0x47, 0x72, 0x70, 0x63, 0x44, 0x66, 0x45, 0x72, 0x72, 0x6f,
-	0x72, 0x52, 0x06, 0x72, 0x65, 0x73, 0x75, 0x6c, 0x74, 0x22, 0x6b, 0x0a, 0x11, 0x50, 0x72, 0x6f,
-	0x78, 0x79, 0x53, 0x65, 0x72, 0x76, 0x65, 0x72, 0x50, 0x61, 0x63, 0x6b, 0x65, 0x74, 0x12, 0x24,
+	0x61, 0x73, 0x6b, 0x22, 0x68, 0x0a, 0x17, 0x44, 0x61, 0x65, 0x6d, 0x6f, 0x6e, 0x50, 0x72, 0x6f,
+	0x78, 0x79, 0x43, 0x6c, 0x69, 0x65, 0x6e, 0x74, 0x50, 0x61, 0x63, 0x6b, 0x65, 0x74, 0x12, 0x24,
 	0x0a, 0x04, 0x74, 0x79, 0x70, 0x65, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0e, 0x32, 0x10, 0x2e, 0x64,
 	0x66, 0x70, 0x72, 0x6f, 0x78, 0x79, 0x2e, 0x52, 0x65, 0x71, 0x54, 0x79, 0x70, 0x65, 0x52, 0x04,
-	0x74, 0x79, 0x70, 0x65, 0x12, 0x30, 0x0a, 0x09, 0x63, 0x61, 0x63, 0x68, 0x65, 0x5f, 0x72, 0x65,
-	0x71, 0x18, 0x02, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x13, 0x2e, 0x64, 0x66, 0x70, 0x72, 0x6f, 0x78,
-	0x79, 0x2e, 0x44, 0x66, 0x43, 0x61, 0x63, 0x68, 0x65, 0x52, 0x65, 0x71, 0x52, 0x08, 0x63, 0x61,
-	0x63, 0x68, 0x65, 0x52, 0x65, 0x71, 0x2a, 0x56, 0x0a, 0x07, 0x52, 0x65, 0x71, 0x54, 0x79, 0x70,
-	0x65, 0x12, 0x0d, 0x0a, 0x09, 0x48, 0x65, 0x61, 0x72, 0x74, 0x42, 0x65, 0x61, 0x74, 0x10, 0x00,
-	0x12, 0x0c, 0x0a, 0x08, 0x53, 0x74, 0x61, 0x74, 0x54, 0x61, 0x73, 0x6b, 0x10, 0x01, 0x12, 0x0e,
-	0x0a, 0x0a, 0x49, 0x6d, 0x70, 0x6f, 0x72, 0x74, 0x54, 0x61, 0x73, 0x6b, 0x10, 0x02, 0x12, 0x0e,
-	0x0a, 0x0a, 0x45, 0x78, 0x70, 0x6f, 0x72, 0x74, 0x54, 0x61, 0x73, 0x6b, 0x10, 0x03, 0x12, 0x0e,
-	0x0a, 0x0a, 0x44, 0x65, 0x6c, 0x65, 0x74, 0x65, 0x54, 0x61, 0x73, 0x6b, 0x10, 0x04, 0x32, 0x53,
-	0x0a, 0x05, 0x50, 0x72, 0x6f, 0x78, 0x79, 0x12, 0x4a, 0x0a, 0x0c, 0x50, 0x72, 0x6f, 0x78, 0x79,
-	0x53, 0x65, 0x72, 0x76, 0x69, 0x63, 0x65, 0x12, 0x1a, 0x2e, 0x64, 0x66, 0x70, 0x72, 0x6f, 0x78,
-	0x79, 0x2e, 0x50, 0x72, 0x6f, 0x78, 0x79, 0x43, 0x6c, 0x69, 0x65, 0x6e, 0x74, 0x50, 0x61, 0x63,
-	0x6b, 0x65, 0x74, 0x1a, 0x1a, 0x2e, 0x64, 0x66, 0x70, 0x72, 0x6f, 0x78, 0x79, 0x2e, 0x50, 0x72,
-	0x6f, 0x78, 0x79, 0x53, 0x65, 0x72, 0x76, 0x65, 0x72, 0x50, 0x61, 0x63, 0x6b, 0x65, 0x74, 0x28,
-	0x01, 0x30, 0x01, 0x42, 0x25, 0x5a, 0x23, 0x64, 0x37, 0x79, 0x2e, 0x69, 0x6f, 0x2f, 0x64, 0x72,
-	0x61, 0x67, 0x6f, 0x6e, 0x66, 0x6c, 0x79, 0x2f, 0x76, 0x32, 0x2f, 0x70, 0x6b, 0x67, 0x2f, 0x72,
-	0x70, 0x63, 0x2f, 0x64, 0x66, 0x70, 0x72, 0x6f, 0x78, 0x79, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74,
-	0x6f, 0x33,
+	0x74, 0x79, 0x70, 0x65, 0x12, 0x27, 0x0a, 0x05, 0x65, 0x72, 0x72, 0x6f, 0x72, 0x18, 0x02, 0x20,
+	0x01, 0x28, 0x0b, 0x32, 0x11, 0x2e, 0x62, 0x61, 0x73, 0x65, 0x2e, 0x47, 0x72, 0x70, 0x63, 0x44,
+	0x66, 0x45, 0x72, 0x72, 0x6f, 0x72, 0x52, 0x05, 0x65, 0x72, 0x72, 0x6f, 0x72, 0x22, 0x71, 0x0a,
+	0x17, 0x44, 0x61, 0x65, 0x6d, 0x6f, 0x6e, 0x50, 0x72, 0x6f, 0x78, 0x79, 0x53, 0x65, 0x72, 0x76,
+	0x65, 0x72, 0x50, 0x61, 0x63, 0x6b, 0x65, 0x74, 0x12, 0x24, 0x0a, 0x04, 0x74, 0x79, 0x70, 0x65,
+	0x18, 0x01, 0x20, 0x01, 0x28, 0x0e, 0x32, 0x10, 0x2e, 0x64, 0x66, 0x70, 0x72, 0x6f, 0x78, 0x79,
+	0x2e, 0x52, 0x65, 0x71, 0x54, 0x79, 0x70, 0x65, 0x52, 0x04, 0x74, 0x79, 0x70, 0x65, 0x12, 0x30,
+	0x0a, 0x09, 0x63, 0x61, 0x63, 0x68, 0x65, 0x5f, 0x72, 0x65, 0x71, 0x18, 0x02, 0x20, 0x01, 0x28,
+	0x0b, 0x32, 0x13, 0x2e, 0x64, 0x66, 0x70, 0x72, 0x6f, 0x78, 0x79, 0x2e, 0x44, 0x66, 0x43, 0x61,
+	0x63, 0x68, 0x65, 0x52, 0x65, 0x71, 0x52, 0x08, 0x63, 0x61, 0x63, 0x68, 0x65, 0x52, 0x65, 0x71,
+	0x2a, 0x56, 0x0a, 0x07, 0x52, 0x65, 0x71, 0x54, 0x79, 0x70, 0x65, 0x12, 0x0d, 0x0a, 0x09, 0x48,
+	0x65, 0x61, 0x72, 0x74, 0x42, 0x65, 0x61, 0x74, 0x10, 0x00, 0x12, 0x0c, 0x0a, 0x08, 0x53, 0x74,
+	0x61, 0x74, 0x54, 0x61, 0x73, 0x6b, 0x10, 0x01, 0x12, 0x0e, 0x0a, 0x0a, 0x49, 0x6d, 0x70, 0x6f,
+	0x72, 0x74, 0x54, 0x61, 0x73, 0x6b, 0x10, 0x02, 0x12, 0x0e, 0x0a, 0x0a, 0x45, 0x78, 0x70, 0x6f,
+	0x72, 0x74, 0x54, 0x61, 0x73, 0x6b, 0x10, 0x03, 0x12, 0x0e, 0x0a, 0x0a, 0x44, 0x65, 0x6c, 0x65,
+	0x74, 0x65, 0x54, 0x61, 0x73, 0x6b, 0x10, 0x04, 0x32, 0x61, 0x0a, 0x0b, 0x44, 0x61, 0x65, 0x6d,
+	0x6f, 0x6e, 0x50, 0x72, 0x6f, 0x78, 0x79, 0x12, 0x52, 0x0a, 0x08, 0x44, 0x66, 0x64, 0x61, 0x65,
+	0x6d, 0x6f, 0x6e, 0x12, 0x20, 0x2e, 0x64, 0x66, 0x70, 0x72, 0x6f, 0x78, 0x79, 0x2e, 0x44, 0x61,
+	0x65, 0x6d, 0x6f, 0x6e, 0x50, 0x72, 0x6f, 0x78, 0x79, 0x43, 0x6c, 0x69, 0x65, 0x6e, 0x74, 0x50,
+	0x61, 0x63, 0x6b, 0x65, 0x74, 0x1a, 0x20, 0x2e, 0x64, 0x66, 0x70, 0x72, 0x6f, 0x78, 0x79, 0x2e,
+	0x44, 0x61, 0x65, 0x6d, 0x6f, 0x6e, 0x50, 0x72, 0x6f, 0x78, 0x79, 0x53, 0x65, 0x72, 0x76, 0x65,
+	0x72, 0x50, 0x61, 0x63, 0x6b, 0x65, 0x74, 0x28, 0x01, 0x30, 0x01, 0x42, 0x25, 0x5a, 0x23, 0x64,
+	0x37, 0x79, 0x2e, 0x69, 0x6f, 0x2f, 0x64, 0x72, 0x61, 0x67, 0x6f, 0x6e, 0x66, 0x6c, 0x79, 0x2f,
+	0x76, 0x32, 0x2f, 0x70, 0x6b, 0x67, 0x2f, 0x72, 0x70, 0x63, 0x2f, 0x64, 0x66, 0x70, 0x72, 0x6f,
+	0x78, 0x79, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
 }
 
 var (
@@ -349,8 +350,8 @@ var file_pkg_rpc_dfproxy_dfproxy_proto_msgTypes = make([]protoimpl.MessageInfo, 
 var file_pkg_rpc_dfproxy_dfproxy_proto_goTypes = []interface{}{
 	(ReqType)(0),                       // 0: dfproxy.ReqType
 	(*DfCacheReq)(nil),                 // 1: dfproxy.DfCacheReq
-	(*ProxyClientPacket)(nil),          // 2: dfproxy.ProxyClientPacket
-	(*ProxyServerPacket)(nil),          // 3: dfproxy.ProxyServerPacket
+	(*DaemonProxyClientPacket)(nil),    // 2: dfproxy.DaemonProxyClientPacket
+	(*DaemonProxyServerPacket)(nil),    // 3: dfproxy.DaemonProxyServerPacket
 	(*dfdaemon.StatTaskRequest)(nil),   // 4: dfdaemon.StatTaskRequest
 	(*dfdaemon.ImportTaskRequest)(nil), // 5: dfdaemon.ImportTaskRequest
 	(*dfdaemon.ExportTaskRequest)(nil), // 6: dfdaemon.ExportTaskRequest
@@ -362,12 +363,12 @@ var file_pkg_rpc_dfproxy_dfproxy_proto_depIdxs = []int32{
 	5, // 1: dfproxy.DfCacheReq.import_task:type_name -> dfdaemon.ImportTaskRequest
 	6, // 2: dfproxy.DfCacheReq.export_task:type_name -> dfdaemon.ExportTaskRequest
 	7, // 3: dfproxy.DfCacheReq.delete_task:type_name -> dfdaemon.DeleteTaskRequest
-	0, // 4: dfproxy.ProxyClientPacket.type:type_name -> dfproxy.ReqType
-	8, // 5: dfproxy.ProxyClientPacket.result:type_name -> base.GrpcDfError
-	0, // 6: dfproxy.ProxyServerPacket.type:type_name -> dfproxy.ReqType
-	1, // 7: dfproxy.ProxyServerPacket.cache_req:type_name -> dfproxy.DfCacheReq
-	2, // 8: dfproxy.Proxy.ProxyService:input_type -> dfproxy.ProxyClientPacket
-	3, // 9: dfproxy.Proxy.ProxyService:output_type -> dfproxy.ProxyServerPacket
+	0, // 4: dfproxy.DaemonProxyClientPacket.type:type_name -> dfproxy.ReqType
+	8, // 5: dfproxy.DaemonProxyClientPacket.error:type_name -> base.GrpcDfError
+	0, // 6: dfproxy.DaemonProxyServerPacket.type:type_name -> dfproxy.ReqType
+	1, // 7: dfproxy.DaemonProxyServerPacket.cache_req:type_name -> dfproxy.DfCacheReq
+	2, // 8: dfproxy.DaemonProxy.Dfdaemon:input_type -> dfproxy.DaemonProxyClientPacket
+	3, // 9: dfproxy.DaemonProxy.Dfdaemon:output_type -> dfproxy.DaemonProxyServerPacket
 	9, // [9:10] is the sub-list for method output_type
 	8, // [8:9] is the sub-list for method input_type
 	8, // [8:8] is the sub-list for extension type_name
@@ -394,7 +395,7 @@ func file_pkg_rpc_dfproxy_dfproxy_proto_init() {
 			}
 		}
 		file_pkg_rpc_dfproxy_dfproxy_proto_msgTypes[1].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*ProxyClientPacket); i {
+			switch v := v.(*DaemonProxyClientPacket); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -406,7 +407,7 @@ func file_pkg_rpc_dfproxy_dfproxy_proto_init() {
 			}
 		}
 		file_pkg_rpc_dfproxy_dfproxy_proto_msgTypes[2].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*ProxyServerPacket); i {
+			switch v := v.(*DaemonProxyServerPacket); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -447,105 +448,113 @@ var _ grpc.ClientConnInterface
 // is compatible with the grpc package it is being compiled against.
 const _ = grpc.SupportPackageIsVersion6
 
-// ProxyClient is the client API for Proxy service.
+// DaemonProxyClient is the client API for DaemonProxy service.
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://godoc.org/google.golang.org/grpc#ClientConn.NewStream.
-type ProxyClient interface {
-	// Proxy service
-	ProxyService(ctx context.Context, opts ...grpc.CallOption) (Proxy_ProxyServiceClient, error)
+type DaemonProxyClient interface {
+	// Dfdaemon proxy service. Note that proxy client acts as a daemon server,
+	// and proxy server acts as a daemon client, so proxy client connects proxy
+	// server and proxy server will send daemon request to proxy client via
+	// DaemonProxyServerPacket, proxy client will send daemon response via
+	// DaemonProxyClientPacket.
+	Dfdaemon(ctx context.Context, opts ...grpc.CallOption) (DaemonProxy_DfdaemonClient, error)
 }
 
-type proxyClient struct {
+type daemonProxyClient struct {
 	cc grpc.ClientConnInterface
 }
 
-func NewProxyClient(cc grpc.ClientConnInterface) ProxyClient {
-	return &proxyClient{cc}
+func NewDaemonProxyClient(cc grpc.ClientConnInterface) DaemonProxyClient {
+	return &daemonProxyClient{cc}
 }
 
-func (c *proxyClient) ProxyService(ctx context.Context, opts ...grpc.CallOption) (Proxy_ProxyServiceClient, error) {
-	stream, err := c.cc.NewStream(ctx, &_Proxy_serviceDesc.Streams[0], "/dfproxy.Proxy/ProxyService", opts...)
+func (c *daemonProxyClient) Dfdaemon(ctx context.Context, opts ...grpc.CallOption) (DaemonProxy_DfdaemonClient, error) {
+	stream, err := c.cc.NewStream(ctx, &_DaemonProxy_serviceDesc.Streams[0], "/dfproxy.DaemonProxy/Dfdaemon", opts...)
 	if err != nil {
 		return nil, err
 	}
-	x := &proxyProxyServiceClient{stream}
+	x := &daemonProxyDfdaemonClient{stream}
 	return x, nil
 }
 
-type Proxy_ProxyServiceClient interface {
-	Send(*ProxyClientPacket) error
-	Recv() (*ProxyServerPacket, error)
+type DaemonProxy_DfdaemonClient interface {
+	Send(*DaemonProxyClientPacket) error
+	Recv() (*DaemonProxyServerPacket, error)
 	grpc.ClientStream
 }
 
-type proxyProxyServiceClient struct {
+type daemonProxyDfdaemonClient struct {
 	grpc.ClientStream
 }
 
-func (x *proxyProxyServiceClient) Send(m *ProxyClientPacket) error {
+func (x *daemonProxyDfdaemonClient) Send(m *DaemonProxyClientPacket) error {
 	return x.ClientStream.SendMsg(m)
 }
 
-func (x *proxyProxyServiceClient) Recv() (*ProxyServerPacket, error) {
-	m := new(ProxyServerPacket)
+func (x *daemonProxyDfdaemonClient) Recv() (*DaemonProxyServerPacket, error) {
+	m := new(DaemonProxyServerPacket)
 	if err := x.ClientStream.RecvMsg(m); err != nil {
 		return nil, err
 	}
 	return m, nil
 }
 
-// ProxyServer is the server API for Proxy service.
-type ProxyServer interface {
-	// Proxy service
-	ProxyService(Proxy_ProxyServiceServer) error
+// DaemonProxyServer is the server API for DaemonProxy service.
+type DaemonProxyServer interface {
+	// Dfdaemon proxy service. Note that proxy client acts as a daemon server,
+	// and proxy server acts as a daemon client, so proxy client connects proxy
+	// server and proxy server will send daemon request to proxy client via
+	// DaemonProxyServerPacket, proxy client will send daemon response via
+	// DaemonProxyClientPacket.
+	Dfdaemon(DaemonProxy_DfdaemonServer) error
 }
 
-// UnimplementedProxyServer can be embedded to have forward compatible implementations.
-type UnimplementedProxyServer struct {
+// UnimplementedDaemonProxyServer can be embedded to have forward compatible implementations.
+type UnimplementedDaemonProxyServer struct {
 }
 
-func (*UnimplementedProxyServer) ProxyService(Proxy_ProxyServiceServer) error {
-	return status.Errorf(codes.Unimplemented, "method ProxyService not implemented")
+func (*UnimplementedDaemonProxyServer) Dfdaemon(DaemonProxy_DfdaemonServer) error {
+	return status.Errorf(codes.Unimplemented, "method Dfdaemon not implemented")
 }
 
-func RegisterProxyServer(s *grpc.Server, srv ProxyServer) {
-	s.RegisterService(&_Proxy_serviceDesc, srv)
+func RegisterDaemonProxyServer(s *grpc.Server, srv DaemonProxyServer) {
+	s.RegisterService(&_DaemonProxy_serviceDesc, srv)
 }
 
-func _Proxy_ProxyService_Handler(srv interface{}, stream grpc.ServerStream) error {
-	return srv.(ProxyServer).ProxyService(&proxyProxyServiceServer{stream})
+func _DaemonProxy_Dfdaemon_Handler(srv interface{}, stream grpc.ServerStream) error {
+	return srv.(DaemonProxyServer).Dfdaemon(&daemonProxyDfdaemonServer{stream})
 }
 
-type Proxy_ProxyServiceServer interface {
-	Send(*ProxyServerPacket) error
-	Recv() (*ProxyClientPacket, error)
+type DaemonProxy_DfdaemonServer interface {
+	Send(*DaemonProxyServerPacket) error
+	Recv() (*DaemonProxyClientPacket, error)
 	grpc.ServerStream
 }
 
-type proxyProxyServiceServer struct {
+type daemonProxyDfdaemonServer struct {
 	grpc.ServerStream
 }
 
-func (x *proxyProxyServiceServer) Send(m *ProxyServerPacket) error {
+func (x *daemonProxyDfdaemonServer) Send(m *DaemonProxyServerPacket) error {
 	return x.ServerStream.SendMsg(m)
 }
 
-func (x *proxyProxyServiceServer) Recv() (*ProxyClientPacket, error) {
-	m := new(ProxyClientPacket)
+func (x *daemonProxyDfdaemonServer) Recv() (*DaemonProxyClientPacket, error) {
+	m := new(DaemonProxyClientPacket)
 	if err := x.ServerStream.RecvMsg(m); err != nil {
 		return nil, err
 	}
 	return m, nil
 }
 
-var _Proxy_serviceDesc = grpc.ServiceDesc{
-	ServiceName: "dfproxy.Proxy",
-	HandlerType: (*ProxyServer)(nil),
+var _DaemonProxy_serviceDesc = grpc.ServiceDesc{
+	ServiceName: "dfproxy.DaemonProxy",
+	HandlerType: (*DaemonProxyServer)(nil),
 	Methods:     []grpc.MethodDesc{},
 	Streams: []grpc.StreamDesc{
 		{
-			StreamName:    "ProxyService",
-			Handler:       _Proxy_ProxyService_Handler,
+			StreamName:    "Dfdaemon",
+			Handler:       _DaemonProxy_Dfdaemon_Handler,
 			ServerStreams: true,
 			ClientStreams: true,
 		},

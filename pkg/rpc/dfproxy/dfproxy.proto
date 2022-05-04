@@ -38,19 +38,22 @@ message DfCacheReq{
   dfdaemon.DeleteTaskRequest delete_task = 4;
 }
 
-message ProxyClientPacket{
+message DaemonProxyClientPacket{
   ReqType type = 1;
-  base.GrpcDfError result = 2;
+  base.GrpcDfError error = 2;
 }
 
-message ProxyServerPacket{
+message DaemonProxyServerPacket{
   ReqType type = 1;
   DfCacheReq cache_req = 2;
 }
 
-// Proxy RPC Service
-service Proxy{
-  // Proxy service
-  rpc ProxyService(stream ProxyClientPacket)returns(stream ProxyServerPacket);
+// Proxy service for dfdaemon interface
+service DaemonProxy{
+  // Dfdaemon proxy service. Note that proxy client acts as a daemon server,
+  // and proxy server acts as a daemon client, so proxy client connects proxy
+  // server and proxy server will send daemon request to proxy client via
+  // DaemonProxyServerPacket, proxy client will send daemon response via
+  // DaemonProxyClientPacket.
+  rpc Dfdaemon(stream DaemonProxyClientPacket)returns(stream DaemonProxyServerPacket);
 }
-
