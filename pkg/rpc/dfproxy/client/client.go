@@ -46,7 +46,7 @@ func GetClientByAddr(addrs []dfnet.NetAddr, opts ...grpc.DialOption) (DaemonProx
 // DaemonProxyClient see dfproxy.DaemonProxyClient
 type DaemonProxyClient interface {
 	// Dfdaemon proxy service
-	Dfdaemon(ctx context.Context, opts ...grpc.CallOption) (DaemonProxy_DfdaemonClient, error)
+	Dfdaemon(ctx context.Context, opts ...grpc.CallOption) (dfproxy.DaemonProxy_DfdaemonClient, error)
 	Close() error
 }
 
@@ -63,7 +63,7 @@ func (pc *daemonProxyClient) getDaemonProxyClient(key string, stick bool) (dfpro
 }
 
 func (pc *daemonProxyClient) Dfdaemon(ctx context.Context, opts ...grpc.CallOption) (dfproxy.DaemonProxy_DfdaemonClient, error) {
-	client, target, err := pc.getDaemonProxyClient("dfproxy-static", true)
+	client, target, err := pc.getDaemonProxyClient("dfproxy-static", false)
 	if err != nil {
 		return nil, err
 	}
@@ -72,7 +72,7 @@ func (pc *daemonProxyClient) Dfdaemon(ctx context.Context, opts ...grpc.CallOpti
 		return nil, errors.Wrapf(err, "Dfdaemon failed on target %s", target)
 	}
 	logger.Infof("Start dfproxy Dfdaemon stream on target %s", target)
-	return stream
+	return stream, nil
 }
 
 var _ DaemonProxyClient = (*daemonProxyClient)(nil)

@@ -96,7 +96,7 @@ docker-push-manager: docker-build-manager
 .PHONY: docker-push-manager
 
 # Build dragonfly
-build: build-cdn build-scheduler build-dfget build-dfcache build-manager
+build: build-cdn build-scheduler build-dfget build-dfcache build-manager build-dfproxy
 .PHONY: build
 
 # Build cdn
@@ -146,6 +146,18 @@ build-manager-console: build-dirs
 	@echo "Begin to build manager."
 	./hack/build.sh manager-console
 .PHONY: build-manager-console
+
+# Build dfproxy
+build-dfproxy: build-dirs
+	@echo "Begin to build dfproxy."
+	./hack/build.sh dfproxy
+.PHONY: build-dfproxy
+
+# Build linux dfproxy
+build-linux-dfproxy: build-dirs
+	@echo "Begin to build linux dfproxy."
+	GOOS=linux GOARCH=amd64 ./hack/build.sh dfproxy
+.PHONY: build-linux-dfproxy
 
 # Install cdn
 install-cdn:

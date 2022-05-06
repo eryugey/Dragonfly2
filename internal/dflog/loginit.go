@@ -236,3 +236,28 @@ func InitDfcache(console bool, dir string) error {
 
 	return createFileLogger(console, meta, logDir)
 }
+
+func InitDfproxy(verbose, console bool, dir string) error {
+	if console {
+		return createConsoleLogger(verbose)
+	}
+
+	logDir := filepath.Join(dir, "dfproxy")
+
+	var meta = []logInitMeta{
+		{
+			fileName:             CoreLogFileName,
+			setSugaredLoggerFunc: SetCoreLogger,
+		},
+		{
+			fileName:             GrpcLogFileName,
+			setSugaredLoggerFunc: SetGrpcLogger,
+		},
+		{
+			fileName:             GCLogFileName,
+			setSugaredLoggerFunc: SetGCLogger,
+		},
+	}
+
+	return createFileLogger(verbose, meta, logDir)
+}

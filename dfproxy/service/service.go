@@ -83,10 +83,10 @@ func (s *Service) Dfdaemon(stream dfproxy.DaemonProxy_DfdaemonServer) error {
 	for {
 		select {
 		case <-ctx.Done():
-			logger.Infof("Dfproxy Dfdaemon context was done")
+			logger.Infof("Dfproxy Dfdaemon context done: %s", ctx.Err())
 			return ctx.Err()
 		case <-s.doneCh:
-			logger.Infof("Dfproxy Dfdaemon done")
+			logger.Info("Dfproxy Dfdaemon done")
 			return nil
 		case serverPkt := <-s.reqCh:
 			if err := s.handleServerPacket(stream, serverPkt); err != nil {
@@ -240,7 +240,7 @@ func handleClientPacket(clientPkt dfproxy.DaemonProxyClientPacket, reqType dfpro
 		return err
 	}
 	if clientPkt.Error != nil {
-		return errors.New(clientPkt.Error.Message)
+		return errors.New(clientPkt.Error.String())
 	}
 	return nil
 }

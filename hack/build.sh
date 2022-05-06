@@ -9,6 +9,7 @@ DFGET_BINARY_NAME=dfget
 DFCACHE_BINARY_NAME=dfcache
 SCHEDULER_BINARY_NAME=scheduler
 MANAGER_BINARY_NAME=manager
+DFPROXY_BINARY_NAME=dfproxy
 
 PKG=d7y.io/dragonfly/v2
 BUILD_IMAGE=golang:1.17.3-alpine3.14
@@ -69,6 +70,10 @@ build-manager-local() {
     build-local ${MANAGER_BINARY_NAME} manager
 }
 
+build-dfproxy-local() {
+    build-local ${DFPROXY_BINARY_NAME} dfproxy
+}
+
 build-docker() {
     cd "${BUILD_SOURCE_HOME}" || return
     docker run \
@@ -120,6 +125,10 @@ build-manager-console() {
         sh -c "npm install --loglevel warn --progress false && npm run build"
 }
 
+build-dfproxy-docker() {
+    build-docker ${DFPROXY_BINARY_NAME} dfproxy
+}
+
 main() {
     create-dirs
     if [[ "1" == "${USE_DOCKER}" ]]; then
@@ -134,6 +143,9 @@ main() {
         dfcache)
             build-dfcache-docker
             ;;
+        dfproxy)
+            build-dfproxy-docker
+            ;;
         scheduler)
             build-scheduler-docker
             ;;
@@ -146,6 +158,7 @@ main() {
         *)
             build-dfget-docker
             build-dfcache-docker
+            build-dfproxy-docker
             build-cdn-docker
             build-scheduler-docker
             build-manager-docker
@@ -163,6 +176,9 @@ main() {
         dfcache)
             build-dfcache-local
             ;;
+        dfproxy)
+            build-dfproxy-local
+            ;;
         scheduler)
             build-scheduler-local
             ;;
@@ -175,6 +191,7 @@ main() {
         *)
             build-dfget-local
             build-dfcache-local
+            build-dfproxy-local
             build-cdn-local
             build-scheduler-local
             build-manager-local
