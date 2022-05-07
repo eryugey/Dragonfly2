@@ -24,8 +24,12 @@ import (
 	"time"
 
 	logger "d7y.io/dragonfly/v2/internal/dflog"
+	"d7y.io/dragonfly/v2/pkg/dfnet"
+	"d7y.io/dragonfly/v2/pkg/rpc/base"
 	"d7y.io/dragonfly/v2/pkg/rpc/dfdaemon"
+	dfdaemonclient "d7y.io/dragonfly/v2/pkg/rpc/dfdaemon/client"
 	"d7y.io/dragonfly/v2/pkg/rpc/dfproxy"
+	"google.golang.org/grpc"
 )
 
 type Service struct {
@@ -118,7 +122,7 @@ func (s *Service) handleServerPacket(stream dfproxy.DaemonProxy_DfdaemonServer, 
 	return nil
 }
 
-func (s *Service) CheckHealth(ctx context.Context) error {
+func (s *Service) CheckHealth(ctx context.Context, _target dfnet.NetAddr, _opts ...grpc.CallOption) error {
 	reqType := dfproxy.ReqType_CheckHealth
 	serverPkt := dfproxy.DaemonProxyServerPacket{
 		Type: reqType,
@@ -140,7 +144,7 @@ func (s *Service) CheckHealth(ctx context.Context) error {
 	}
 }
 
-func (s *Service) StatTask(ctx context.Context, req *dfdaemon.StatTaskRequest) error {
+func (s *Service) StatTask(ctx context.Context, req *dfdaemon.StatTaskRequest, _opts ...grpc.CallOption) error {
 	reqType := dfproxy.ReqType_StatTask
 	serverPkt := dfproxy.DaemonProxyServerPacket{
 		Type: dfproxy.ReqType_StatTask,
@@ -166,7 +170,7 @@ func (s *Service) StatTask(ctx context.Context, req *dfdaemon.StatTaskRequest) e
 	}
 }
 
-func (s *Service) ImportTask(ctx context.Context, req *dfdaemon.ImportTaskRequest) error {
+func (s *Service) ImportTask(ctx context.Context, req *dfdaemon.ImportTaskRequest, _opts ...grpc.CallOption) error {
 	reqType := dfproxy.ReqType_ImportTask
 	serverPkt := dfproxy.DaemonProxyServerPacket{
 		Type: dfproxy.ReqType_ImportTask,
@@ -192,7 +196,7 @@ func (s *Service) ImportTask(ctx context.Context, req *dfdaemon.ImportTaskReques
 	}
 }
 
-func (s *Service) ExportTask(ctx context.Context, req *dfdaemon.ExportTaskRequest) error {
+func (s *Service) ExportTask(ctx context.Context, req *dfdaemon.ExportTaskRequest, _opts ...grpc.CallOption) error {
 	reqType := dfproxy.ReqType_ExportTask
 	serverPkt := dfproxy.DaemonProxyServerPacket{
 		Type: dfproxy.ReqType_ExportTask,
@@ -218,7 +222,7 @@ func (s *Service) ExportTask(ctx context.Context, req *dfdaemon.ExportTaskReques
 	}
 }
 
-func (s *Service) DeleteTask(ctx context.Context, req *dfdaemon.DeleteTaskRequest) error {
+func (s *Service) DeleteTask(ctx context.Context, req *dfdaemon.DeleteTaskRequest, _opts ...grpc.CallOption) error {
 	reqType := dfproxy.ReqType_DeleteTask
 	serverPkt := dfproxy.DaemonProxyServerPacket{
 		Type: dfproxy.ReqType_DeleteTask,
@@ -242,6 +246,23 @@ func (s *Service) DeleteTask(ctx context.Context, req *dfdaemon.DeleteTaskReques
 	case <-ctx.Done():
 		return handleContextDone(ctx, "delete timeout")
 	}
+}
+
+// The following DaemonClient interfaces are not implemented yet.
+func (s *Service) Download(ctx context.Context, req *dfdaemon.DownRequest, opts ...grpc.CallOption) (*dfdaemonclient.DownResultStream, error) {
+	return nil, errors.New("function not implemented")
+}
+
+func (s *Service) GetPieceTasks(ctx context.Context, addr dfnet.NetAddr, ptr *base.PieceTaskRequest, opts ...grpc.CallOption) (*base.PiecePacket, error) {
+	return nil, errors.New("function not implemented")
+}
+
+func (s *Service) SyncPieceTasks(ctx context.Context, addr dfnet.NetAddr, ptr *base.PieceTaskRequest, opts ...grpc.CallOption) (dfdaemon.Daemon_SyncPieceTasksClient, error) {
+	return nil, errors.New("function not implemented")
+}
+
+func (s *Service) Close() error {
+	return nil
 }
 
 func checkReqType(got, expected dfproxy.ReqType) error {
@@ -274,3 +295,5 @@ func handleContextDone(ctx context.Context, msg string) error {
 	logger.Warn(msg)
 	return errors.New(msg)
 }
+
+var _ dfdaemonclient.DaemonClient = (*Service)(nil)
