@@ -203,11 +203,12 @@ func handleError(retErr error) *base.GrpcDfError {
 type Server struct {
 	grpcServer *grpc.Server
 	listen     *dfnet.NetAddr
+	service    *service.Service
 }
 
-func NewServer(listen *dfnet.NetAddr, streamCh chan<- dfproxy.DaemonProxy_DfdaemonServer) (*Server, error) {
+func NewServer(listen *dfnet.NetAddr, ready chan<- bool) (*Server, error) {
 	// Initialize dfproxy service
-	service := service.New(streamCh)
+	service := service.New(ready)
 
 	// Initialize grpc service
 	svr := rpcserver.New(service)
@@ -215,7 +216,12 @@ func NewServer(listen *dfnet.NetAddr, streamCh chan<- dfproxy.DaemonProxy_Dfdaem
 	return &Server{
 		grpcServer: svr,
 		listen:     listen,
+		service:    service,
 	}, nil
+}
+
+func (s *Server) GetService() *service.Service {
+	return s.service
 }
 
 func (s *Server) Serve() error {

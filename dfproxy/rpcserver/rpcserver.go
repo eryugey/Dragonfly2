@@ -24,7 +24,6 @@ import (
 	"d7y.io/dragonfly/v2/dfproxy/service"
 	"d7y.io/dragonfly/v2/pkg/rpc"
 	"d7y.io/dragonfly/v2/pkg/rpc/dfproxy"
-	"d7y.io/dragonfly/v2/pkg/rpc/scheduler"
 )
 
 // Server is grpc server
@@ -32,8 +31,8 @@ type Server struct {
 	// Service interface
 	service *service.Service
 
-	// GRPC UnimplementedSchedulerServer interface
-	scheduler.UnimplementedSchedulerServer
+	// GRPC UnimplementedDaemonProxyServer interface
+	dfproxy.UnimplementedDaemonProxyServer
 }
 
 // New returns a new transparent dfproxy server from the given options
@@ -42,7 +41,7 @@ func New(service *service.Service, opts ...grpc.ServerOption) *grpc.Server {
 	grpcServer := grpc.NewServer(append(rpc.DefaultServerOptions(), opts...)...)
 
 	// Register servers on grpc server
-	scheduler.RegisterSchedulerServer(grpcServer, svr)
+	dfproxy.RegisterDaemonProxyServer(grpcServer, svr)
 	healthpb.RegisterHealthServer(grpcServer, health.NewServer())
 	return grpcServer
 }
