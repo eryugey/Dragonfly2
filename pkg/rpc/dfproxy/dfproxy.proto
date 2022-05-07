@@ -25,13 +25,14 @@ option go_package = "d7y.io/dragonfly/v2/pkg/rpc/dfproxy";
 
 enum ReqType{
   HeartBeat = 0;
-  StatTask = 1;
-  ImportTask = 2;
-  ExportTask = 3;
-  DeleteTask = 4;
+  CheckHealth = 1;
+  StatTask = 2;
+  ImportTask = 3;
+  ExportTask = 4;
+  DeleteTask = 5;
 }
 
-message DfCacheReq{
+message DfDaemonReq{
   dfdaemon.StatTaskRequest stat_task = 1;
   dfdaemon.ImportTaskRequest import_task = 2;
   dfdaemon.ExportTaskRequest export_task = 3;
@@ -45,7 +46,7 @@ message DaemonProxyClientPacket{
 
 message DaemonProxyServerPacket{
   ReqType type = 1;
-  DfCacheReq cache_req = 2;
+  DfDaemonReq daemon_req = 2;
 }
 
 // Proxy service for dfdaemon interface

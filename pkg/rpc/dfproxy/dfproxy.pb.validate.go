@@ -33,16 +33,17 @@ var (
 	_ = anypb.Any{}
 )
 
-// Validate checks the field values on DfCacheReq with the rules defined in the
-// proto definition for this message. If any rules are violated, an error is returned.
-func (m *DfCacheReq) Validate() error {
+// Validate checks the field values on DfDaemonReq with the rules defined in
+// the proto definition for this message. If any rules are violated, an error
+// is returned.
+func (m *DfDaemonReq) Validate() error {
 	if m == nil {
 		return nil
 	}
 
 	if v, ok := interface{}(m.GetStatTask()).(interface{ Validate() error }); ok {
 		if err := v.Validate(); err != nil {
-			return DfCacheReqValidationError{
+			return DfDaemonReqValidationError{
 				field:  "StatTask",
 				reason: "embedded message failed validation",
 				cause:  err,
@@ -52,7 +53,7 @@ func (m *DfCacheReq) Validate() error {
 
 	if v, ok := interface{}(m.GetImportTask()).(interface{ Validate() error }); ok {
 		if err := v.Validate(); err != nil {
-			return DfCacheReqValidationError{
+			return DfDaemonReqValidationError{
 				field:  "ImportTask",
 				reason: "embedded message failed validation",
 				cause:  err,
@@ -62,7 +63,7 @@ func (m *DfCacheReq) Validate() error {
 
 	if v, ok := interface{}(m.GetExportTask()).(interface{ Validate() error }); ok {
 		if err := v.Validate(); err != nil {
-			return DfCacheReqValidationError{
+			return DfDaemonReqValidationError{
 				field:  "ExportTask",
 				reason: "embedded message failed validation",
 				cause:  err,
@@ -72,7 +73,7 @@ func (m *DfCacheReq) Validate() error {
 
 	if v, ok := interface{}(m.GetDeleteTask()).(interface{ Validate() error }); ok {
 		if err := v.Validate(); err != nil {
-			return DfCacheReqValidationError{
+			return DfDaemonReqValidationError{
 				field:  "DeleteTask",
 				reason: "embedded message failed validation",
 				cause:  err,
@@ -83,9 +84,9 @@ func (m *DfCacheReq) Validate() error {
 	return nil
 }
 
-// DfCacheReqValidationError is the validation error returned by
-// DfCacheReq.Validate if the designated constraints aren't met.
-type DfCacheReqValidationError struct {
+// DfDaemonReqValidationError is the validation error returned by
+// DfDaemonReq.Validate if the designated constraints aren't met.
+type DfDaemonReqValidationError struct {
 	field  string
 	reason string
 	cause  error
@@ -93,22 +94,22 @@ type DfCacheReqValidationError struct {
 }
 
 // Field function returns field value.
-func (e DfCacheReqValidationError) Field() string { return e.field }
+func (e DfDaemonReqValidationError) Field() string { return e.field }
 
 // Reason function returns reason value.
-func (e DfCacheReqValidationError) Reason() string { return e.reason }
+func (e DfDaemonReqValidationError) Reason() string { return e.reason }
 
 // Cause function returns cause value.
-func (e DfCacheReqValidationError) Cause() error { return e.cause }
+func (e DfDaemonReqValidationError) Cause() error { return e.cause }
 
 // Key function returns key value.
-func (e DfCacheReqValidationError) Key() bool { return e.key }
+func (e DfDaemonReqValidationError) Key() bool { return e.key }
 
 // ErrorName returns error name.
-func (e DfCacheReqValidationError) ErrorName() string { return "DfCacheReqValidationError" }
+func (e DfDaemonReqValidationError) ErrorName() string { return "DfDaemonReqValidationError" }
 
 // Error satisfies the builtin error interface
-func (e DfCacheReqValidationError) Error() string {
+func (e DfDaemonReqValidationError) Error() string {
 	cause := ""
 	if e.cause != nil {
 		cause = fmt.Sprintf(" | caused by: %v", e.cause)
@@ -120,14 +121,14 @@ func (e DfCacheReqValidationError) Error() string {
 	}
 
 	return fmt.Sprintf(
-		"invalid %sDfCacheReq.%s: %s%s",
+		"invalid %sDfDaemonReq.%s: %s%s",
 		key,
 		e.field,
 		e.reason,
 		cause)
 }
 
-var _ error = DfCacheReqValidationError{}
+var _ error = DfDaemonReqValidationError{}
 
 var _ interface {
 	Field() string
@@ -135,7 +136,7 @@ var _ interface {
 	Key() bool
 	Cause() error
 	ErrorName() string
-} = DfCacheReqValidationError{}
+} = DfDaemonReqValidationError{}
 
 // Validate checks the field values on DaemonProxyClientPacket with the rules
 // defined in the proto definition for this message. If any rules are
@@ -226,10 +227,10 @@ func (m *DaemonProxyServerPacket) Validate() error {
 
 	// no validation rules for Type
 
-	if v, ok := interface{}(m.GetCacheReq()).(interface{ Validate() error }); ok {
+	if v, ok := interface{}(m.GetDaemonReq()).(interface{ Validate() error }); ok {
 		if err := v.Validate(); err != nil {
 			return DaemonProxyServerPacketValidationError{
-				field:  "CacheReq",
+				field:  "DaemonReq",
 				reason: "embedded message failed validation",
 				cause:  err,
 			}
