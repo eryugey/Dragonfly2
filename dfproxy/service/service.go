@@ -122,6 +122,28 @@ func (s *Service) handleServerPacket(stream dfproxy.DaemonProxy_DfdaemonServer, 
 	return nil
 }
 
+func (s *Service) CheckHealth(ctx context.Context) error {
+	reqType := dfproxy.ReqType_CheckHealth
+	serverPkt := dfproxy.DaemonProxyServerPacket{
+		Type: reqType,
+	}
+
+	logger.Info("dfproxy starts to check health")
+
+	start := time.Now()
+	s.reqCh <- serverPkt
+	select {
+	case clientPkt := <-s.resCh:
+		if err := handleClientPacket(clientPkt, reqType); err != nil {
+			return err
+		}
+		logger.Infof("check health successfully in %.6f s", time.Since(start).Seconds())
+		return nil
+	case <-ctx.Done():
+		return handleContextDone("check health timeout")
+	}
+}
+
 func (s *Service) StatTask(ctx context.Context, req *dfdaemon.StatTaskRequest) error {
 	reqType := dfproxy.ReqType_StatTask
 	serverPkt := dfproxy.DaemonProxyServerPacket{

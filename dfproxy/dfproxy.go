@@ -129,6 +129,8 @@ func (c *Client) handleServerPacket(stream dfproxy.DaemonProxy_DfdaemonClient, s
 		Error: nil,
 	}
 	switch reqType {
+	case dfproxy.ReqType_CheckHealth:
+		clientPkt.Error = handleError(c.daemonClient.CheckHealth(stream.Context(), *c.config.Daemon.DaemonGRPC))
 	case dfproxy.ReqType_StatTask:
 		statReq := serverPkt.DaemonReq.StatTask
 		if statReq == nil {
