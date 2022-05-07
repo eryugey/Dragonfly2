@@ -29,15 +29,17 @@ import (
 )
 
 type Service struct {
-	reqCh chan dfproxy.DaemonProxyServerPacket
-	resCh chan dfproxy.DaemonProxyClientPacket
+	streamCh chan<- dfproxy.DaemonProxy_DfdaemonServer
+	reqCh    chan dfproxy.DaemonProxyServerPacket
+	resCh    chan dfproxy.DaemonProxyClientPacket
 }
 
 // New service instance
-func New() *Service {
+func New(streamCh chan<- dfproxy.DaemonProxy_DfdaemonServer) *Service {
 	return &Service{
-		reqCh: make(chan dfproxy.DaemonProxyServerPacket),
-		resCh: make(chan dfproxy.DaemonProxyClientPacket),
+		streamCh: streamCh,
+		reqCh:    make(chan dfproxy.DaemonProxyServerPacket),
+		resCh:    make(chan dfproxy.DaemonProxyClientPacket),
 	}
 }
 
@@ -71,6 +73,8 @@ func (s *Service) Dfdaemon(stream dfproxy.DaemonProxy_DfdaemonServer) error {
 	if err := checkReqType(clientPkt.GetType(), dfproxy.ReqType_HeartBeat); err != nil {
 		return err
 	}
+
+	s.streamCh <- stream
 
 	// We got initial HeartBeat request, and we're ready to send server packet back to client as
 	// dfdaemon requests.

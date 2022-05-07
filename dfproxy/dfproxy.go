@@ -205,9 +205,9 @@ type Server struct {
 	listen     *dfnet.NetAddr
 }
 
-func NewServer(listen *dfnet.NetAddr) (*Server, error) {
+func NewServer(listen *dfnet.NetAddr, streamCh chan<- dfproxy.DaemonProxy_DfdaemonServer) (*Server, error) {
 	// Initialize dfproxy service
-	service := service.New()
+	service := service.New(streamCh)
 
 	// Initialize grpc service
 	svr := rpcserver.New(service)
