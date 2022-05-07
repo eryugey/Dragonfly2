@@ -20,8 +20,12 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"net"
+	"time"
 
 	"d7y.io/dragonfly/v2/dfproxy/config"
+	"d7y.io/dragonfly/v2/dfproxy/rpcserver"
+	"d7y.io/dragonfly/v2/dfproxy/service"
 	"d7y.io/dragonfly/v2/internal/dferrors"
 	logger "d7y.io/dragonfly/v2/internal/dflog"
 	"d7y.io/dragonfly/v2/pkg/dfnet"
@@ -32,6 +36,13 @@ import (
 	"d7y.io/dragonfly/v2/pkg/rpc/dfproxy"
 	"d7y.io/dragonfly/v2/pkg/rpc/dfproxy/client"
 	"github.com/pkg/errors"
+	"google.golang.org/grpc"
+)
+
+const (
+	// gracefulStopTimeout specifies a time limit for
+	// grpc server to complete a graceful shutdown
+	gracefulStopTimeout = 5 * time.Second
 )
 
 type Client struct {
@@ -40,7 +51,7 @@ type Client struct {
 	daemonClient daemonclient.DaemonClient
 }
 
-func New(ctx context.Context, cfg *config.Config, d dfpath.Dfpath) (*Client, error) {
+func NewClient(ctx context.Context, cfg *config.Config, d dfpath.Dfpath) (*Client, error) {
 	proxyClient, err := client.GetClientByAddr([]dfnet.NetAddr{*cfg.Server.ProxyGRPC})
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to get dfproxy client to addr %s", cfg.Server.ProxyGRPC)
@@ -187,4 +198,58 @@ func handleError(retErr error) *base.GrpcDfError {
 	}
 	msg := fmt.Sprintf("error msg: %s", retErr.Error())
 	return common.NewGrpcDfError(base.Code_UnknownError, msg)
+}
+
+type Server struct {
+	grpcServer *grpc.Server
+	listen     *dfnet.NetAddr
+}
+
+func NewServer(listen *dfnet.NetAddr) (*Server, error) {
+	// Initialize dfproxy service
+	service := service.New()
+
+	// Initialize grpc service
+	svr := rpcserver.New(service)
+
+	return &Server{
+		grpcServer: svr,
+		listen:     listen,
+	}, nil
+}
+
+func (s *Server) Serve() error {
+	listener, err := net.Listen(string(s.listen.Type), s.listen.Addr)
+	if err != nil {
+		msg := fmt.Sprintf("failed to listen on %s: %s", s.listen.GetEndpoint(), err.Error())
+		logger.Error(msg)
+		return errors.New(msg)
+	}
+	defer listener.Close()
+
+	// Start GRPC server
+	logger.Infof("dfproxy starting grpc server at %s", s.listen.GetEndpoint())
+	if err := s.grpcServer.Serve(listener); err != nil {
+		msg := fmt.Sprintf("dfproxy serve failed: %s", err.Error())
+		logger.Error(msg)
+		return errors.New(msg)
+	}
+	return nil
+}
+
+func (s *Server) Stop() {
+	stopped := make(chan struct{})
+	go func() {
+		s.grpcServer.GracefulStop()
+		logger.Info("dfproxy grpc server closed under request")
+		close(stopped)
+	}()
+
+	t := time.NewTimer(gracefulStopTimeout)
+	select {
+	case <-t.C:
+		s.grpcServer.Stop()
+	case <-stopped:
+		t.Stop()
+	}
 }

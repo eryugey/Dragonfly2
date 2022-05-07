@@ -29,17 +29,15 @@ import (
 )
 
 type Service struct {
-	reqCh  <-chan dfproxy.DaemonProxyServerPacket
-	resCh  chan<- dfproxy.DaemonProxyClientPacket
-	doneCh <-chan bool
+	reqCh chan dfproxy.DaemonProxyServerPacket
+	resCh chan dfproxy.DaemonProxyClientPacket
 }
 
 // New service instance
-func New(reqCh <-chan dfproxy.DaemonProxyServerPacket, resCh chan<- dfproxy.DaemonProxyClientPacket, doneCh <-chan bool) *Service {
+func New() *Service {
 	return &Service{
-		reqCh:  reqCh,
-		resCh:  resCh,
-		doneCh: doneCh,
+		reqCh: make(chan dfproxy.DaemonProxyServerPacket),
+		resCh: make(chan dfproxy.DaemonProxyClientPacket),
 	}
 }
 
@@ -48,7 +46,6 @@ func (s *Service) Dfdaemon(stream dfproxy.DaemonProxy_DfdaemonServer) error {
 	defer func() {
 		close(s.reqCh)
 		close(s.resCh)
-		close(s.doneCh)
 	}()
 
 	ctx := stream.Context()
@@ -56,9 +53,6 @@ func (s *Service) Dfdaemon(stream dfproxy.DaemonProxy_DfdaemonServer) error {
 	case <-ctx.Done():
 		logger.Infof("Dfproxy Dfdaemon context was done")
 		return ctx.Err()
-	case <-s.doneCh:
-		logger.Infof("Dfproxy Dfdaemon done")
-		return nil
 	}
 
 	// Dfdaemon receives the first packet, which should be ReqType_HeartBeat, subsequent packets
@@ -85,9 +79,6 @@ func (s *Service) Dfdaemon(stream dfproxy.DaemonProxy_DfdaemonServer) error {
 		case <-ctx.Done():
 			logger.Infof("Dfproxy Dfdaemon context done: %s", ctx.Err())
 			return ctx.Err()
-		case <-s.doneCh:
-			logger.Info("Dfproxy Dfdaemon done")
-			return nil
 		case serverPkt := <-s.reqCh:
 			if err := s.handleServerPacket(stream, serverPkt); err != nil {
 				logger.Warnf("Failed to handle server req: %s", err.Error())
@@ -118,7 +109,7 @@ func (s *Service) handleServerPacket(stream dfproxy.DaemonProxy_DfdaemonServer, 
 		return err
 	}
 
-	s.resCh <- clientPkt
+	s.resCh <- *clientPkt
 	return nil
 }
 
@@ -140,7 +131,7 @@ func (s *Service) CheckHealth(ctx context.Context) error {
 		logger.Infof("check health successfully in %.6f s", time.Since(start).Seconds())
 		return nil
 	case <-ctx.Done():
-		return handleContextDone("check health timeout")
+		return handleContextDone(ctx, "check health timeout")
 	}
 }
 
@@ -148,7 +139,7 @@ func (s *Service) StatTask(ctx context.Context, req *dfdaemon.StatTaskRequest) e
 	reqType := dfproxy.ReqType_StatTask
 	serverPkt := dfproxy.DaemonProxyServerPacket{
 		Type: dfproxy.ReqType_StatTask,
-		DaemonReq: dfproxy.DfDaemonReq{
+		DaemonReq: &dfproxy.DfDaemonReq{
 			StatTask: req,
 		},
 	}
@@ -166,7 +157,7 @@ func (s *Service) StatTask(ctx context.Context, req *dfdaemon.StatTaskRequest) e
 		wLog.Infof("task stat successfully in %.6f s", time.Since(start).Seconds())
 		return nil
 	case <-ctx.Done():
-		return handleContextDone("stat timeout")
+		return handleContextDone(ctx, "stat timeout")
 	}
 }
 
@@ -174,7 +165,7 @@ func (s *Service) ImportTask(ctx context.Context, req *dfdaemon.ImportTaskReques
 	reqType := dfproxy.ReqType_ImportTask
 	serverPkt := dfproxy.DaemonProxyServerPacket{
 		Type: dfproxy.ReqType_ImportTask,
-		DaemonReq: dfproxy.DfDaemonReq{
+		DaemonReq: &dfproxy.DfDaemonReq{
 			ImportTask: req,
 		},
 	}
@@ -192,7 +183,7 @@ func (s *Service) ImportTask(ctx context.Context, req *dfdaemon.ImportTaskReques
 		wLog.Infof("task imported successfully in %.6f s", time.Since(start).Seconds())
 		return nil
 	case <-ctx.Done():
-		return handleContextDone("import timeout")
+		return handleContextDone(ctx, "import timeout")
 	}
 }
 
@@ -200,7 +191,7 @@ func (s *Service) ExportTask(ctx context.Context, req *dfdaemon.ExportTaskReques
 	reqType := dfproxy.ReqType_ExportTask
 	serverPkt := dfproxy.DaemonProxyServerPacket{
 		Type: dfproxy.ReqType_ExportTask,
-		DaemonReq: dfproxy.DfDaemonReq{
+		DaemonReq: &dfproxy.DfDaemonReq{
 			ExportTask: req,
 		},
 	}
@@ -218,7 +209,7 @@ func (s *Service) ExportTask(ctx context.Context, req *dfdaemon.ExportTaskReques
 		wLog.Infof("task exported successfully in %.6f s", time.Since(start).Seconds())
 		return nil
 	case <-ctx.Done():
-		return handleContextDone("export timeout")
+		return handleContextDone(ctx, "export timeout")
 	}
 }
 
@@ -226,7 +217,7 @@ func (s *Service) DeleteTask(ctx context.Context, req *dfdaemon.DeleteTaskReques
 	reqType := dfproxy.ReqType_DeleteTask
 	serverPkt := dfproxy.DaemonProxyServerPacket{
 		Type: dfproxy.ReqType_DeleteTask,
-		DaemonReq: dfproxy.DfDaemonReq{
+		DaemonReq: &dfproxy.DfDaemonReq{
 			DeleteTask: req,
 		},
 	}
@@ -244,13 +235,13 @@ func (s *Service) DeleteTask(ctx context.Context, req *dfdaemon.DeleteTaskReques
 		wLog.Infof("task deleted successfully in %.6f s", time.Since(start).Seconds())
 		return nil
 	case <-ctx.Done():
-		return handleContextDone("delete timeout")
+		return handleContextDone(ctx, "delete timeout")
 	}
 }
 
 func checkReqType(got, expected dfproxy.ReqType) error {
 	if got != expected {
-		msg := fmt.Sprintf("invalid req type %d %s, expected %d %s", got, dfproxy.ReqType_name[got], expected, dfproxy.ReqType_name[expected])
+		msg := fmt.Sprintf("invalid req type %d %s, expected %d %s", got, dfproxy.ReqType_name[int32(got)], expected, dfproxy.ReqType_name[int32(expected)])
 		logger.Error(msg)
 		return errors.New(msg)
 	}
@@ -269,12 +260,12 @@ func handleClientPacket(clientPkt dfproxy.DaemonProxyClientPacket, reqType dfpro
 
 func handleContextDone(ctx context.Context, msg string) error {
 	if ctx.Err() == context.DeadlineExceeded {
-		wLog.Warn(msg)
-		return errors.Error(msg)
+		logger.Warn(msg)
+		return errors.New(msg)
 	} else if ctx.Err() != nil {
 		return ctx.Err()
 	}
-	msg := "context done without receving clientPkt"
-	wLog.Warn(msg)
+	msg = "context done without receving clientPkt"
+	logger.Warn(msg)
 	return errors.New(msg)
 }

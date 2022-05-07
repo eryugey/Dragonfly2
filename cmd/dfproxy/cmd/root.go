@@ -100,7 +100,7 @@ func runDfproxy(ctx context.Context, d dfpath.Dfpath) error {
 
 	logger.Infof("dfproxy configuration:\n%s", string(s))
 
-	proxy, err := dfproxy.New(ctx, cfg, d)
+	proxy, err := dfproxy.NewClient(ctx, cfg, d)
 	if err != nil {
 		return err
 	}
