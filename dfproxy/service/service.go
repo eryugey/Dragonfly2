@@ -126,7 +126,7 @@ func (s *Service) StatTask(ctx context.Context, req *dfdaemon.StatTaskRequest) e
 	reqType := dfproxy.ReqType_StatTask
 	serverPkt := dfproxy.DaemonProxyServerPacket{
 		Type: dfproxy.ReqType_StatTask,
-		CacheReq: dfproxy.DfCacheReq{
+		DaemonReq: dfproxy.DfDaemonReq{
 			StatTask: req,
 		},
 	}
@@ -152,7 +152,7 @@ func (s *Service) ImportTask(ctx context.Context, req *dfdaemon.ImportTaskReques
 	reqType := dfproxy.ReqType_ImportTask
 	serverPkt := dfproxy.DaemonProxyServerPacket{
 		Type: dfproxy.ReqType_ImportTask,
-		CacheReq: dfproxy.DfCacheReq{
+		DaemonReq: dfproxy.DfDaemonReq{
 			ImportTask: req,
 		},
 	}
@@ -178,7 +178,7 @@ func (s *Service) ExportTask(ctx context.Context, req *dfdaemon.ExportTaskReques
 	reqType := dfproxy.ReqType_ExportTask
 	serverPkt := dfproxy.DaemonProxyServerPacket{
 		Type: dfproxy.ReqType_ExportTask,
-		CacheReq: dfproxy.DfCacheReq{
+		DaemonReq: dfproxy.DfDaemonReq{
 			ExportTask: req,
 		},
 	}
@@ -204,7 +204,7 @@ func (s *Service) DeleteTask(ctx context.Context, req *dfdaemon.DeleteTaskReques
 	reqType := dfproxy.ReqType_DeleteTask
 	serverPkt := dfproxy.DaemonProxyServerPacket{
 		Type: dfproxy.ReqType_DeleteTask,
-		CacheReq: dfproxy.DfCacheReq{
+		DaemonReq: dfproxy.DfDaemonReq{
 			DeleteTask: req,
 		},
 	}

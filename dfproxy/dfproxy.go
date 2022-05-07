@@ -119,8 +119,8 @@ func (c *Client) Do() error {
 }
 
 func (c *Client) handleServerPacket(stream dfproxy.DaemonProxy_DfdaemonClient, serverPkt *dfproxy.DaemonProxyServerPacket) error {
-	if serverPkt.CacheReq == nil {
-		return errors.New("invalid dfproxy server packet, DfCacheReq is nil")
+	if serverPkt.DaemonReq == nil {
+		return errors.New("invalid dfproxy server packet, DfDaemonReq is nil")
 	}
 
 	reqType := serverPkt.GetType()
@@ -130,7 +130,7 @@ func (c *Client) handleServerPacket(stream dfproxy.DaemonProxy_DfdaemonClient, s
 	}
 	switch reqType {
 	case dfproxy.ReqType_StatTask:
-		statReq := serverPkt.CacheReq.StatTask
+		statReq := serverPkt.DaemonReq.StatTask
 		if statReq == nil {
 			e := common.NewGrpcDfError(base.Code_BadRequest, "StatTaskRequest is empty")
 			clientPkt.Error = e
@@ -138,7 +138,7 @@ func (c *Client) handleServerPacket(stream dfproxy.DaemonProxy_DfdaemonClient, s
 			clientPkt.Error = handleError(c.daemonClient.StatTask(stream.Context(), statReq))
 		}
 	case dfproxy.ReqType_ImportTask:
-		importReq := serverPkt.CacheReq.ImportTask
+		importReq := serverPkt.DaemonReq.ImportTask
 		if importReq == nil {
 			e := common.NewGrpcDfError(base.Code_BadRequest, "ImportTaskRequest is empty")
 			clientPkt.Error = e
@@ -146,7 +146,7 @@ func (c *Client) handleServerPacket(stream dfproxy.DaemonProxy_DfdaemonClient, s
 			clientPkt.Error = handleError(c.daemonClient.ImportTask(stream.Context(), importReq))
 		}
 	case dfproxy.ReqType_ExportTask:
-		exportReq := serverPkt.CacheReq.ExportTask
+		exportReq := serverPkt.DaemonReq.ExportTask
 		if exportReq == nil {
 			e := common.NewGrpcDfError(base.Code_BadRequest, "ExportTaskRequest is empty")
 			clientPkt.Error = e
@@ -154,7 +154,7 @@ func (c *Client) handleServerPacket(stream dfproxy.DaemonProxy_DfdaemonClient, s
 			clientPkt.Error = handleError(c.daemonClient.ExportTask(stream.Context(), exportReq))
 		}
 	case dfproxy.ReqType_DeleteTask:
-		deleteReq := serverPkt.CacheReq.DeleteTask
+		deleteReq := serverPkt.DaemonReq.DeleteTask
 		if deleteReq == nil {
 			e := common.NewGrpcDfError(base.Code_BadRequest, "DeleteTaskRequest is empty")
 			clientPkt.Error = e
