@@ -21,6 +21,9 @@ import (
 	"fmt"
 	"io"
 	"net"
+	"os"
+	"path"
+	"path/filepath"
 	"time"
 
 	"d7y.io/dragonfly/v2/dfproxy/config"
@@ -225,6 +228,16 @@ func (s *Server) GetService() *service.Service {
 }
 
 func (s *Server) Serve() error {
+	if s.listen.Type == dfnet.UNIX {
+		if !filepath.IsAbs(s.listen.Addr) {
+			return fmt.Errorf("dfdaemon socket path is not absolute path: %s", s.listen.Addr)
+		}
+		dir, _ := path.Split(s.listen.Addr)
+		if err := os.MkdirAll(dir, 0755); err != nil {
+			return errors.Wrapf(err, "failed to mkdir %s", dir)
+		}
+		_ = os.Remove(s.listen.Addr)
+	}
 	listener, err := net.Listen(string(s.listen.Type), s.listen.Addr)
 	if err != nil {
 		msg := fmt.Sprintf("failed to listen on %s: %s", s.listen.GetEndpoint(), err.Error())
