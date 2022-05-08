@@ -34,7 +34,7 @@ func GetClientByAddr(addrs []dfnet.NetAddr, opts ...grpc.DialOption) (DaemonProx
 	}
 	pc := &daemonProxyClient{
 		rpc.NewConnection(context.Background(), "dfproxy-static", addrs, []rpc.ConnOption{
-			rpc.WithConnExpireTime(60 * time.Second),
+			rpc.WithConnExpireTime(0 * time.Second),
 			rpc.WithDialOption(opts),
 		}),
 	}
