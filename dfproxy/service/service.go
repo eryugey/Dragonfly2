@@ -59,10 +59,12 @@ func (s *Service) Dfdaemon(stream dfproxy.DaemonProxy_DfdaemonServer) error {
 	case <-ctx.Done():
 		logger.Infof("Dfproxy Dfdaemon context was done")
 		return ctx.Err()
+	default:
 	}
 
 	// Dfdaemon receives the first packet, which should be ReqType_HeartBeat, subsequent packets
 	// are handled by req type handlers accordingly.
+	logger.Debug("Dfproxy Dfdaemon receving initial HeartBeat packet")
 	clientPkt, err := stream.Recv()
 	if err != nil {
 		if err == io.EOF {
@@ -80,6 +82,7 @@ func (s *Service) Dfdaemon(stream dfproxy.DaemonProxy_DfdaemonServer) error {
 
 	// Let others know service is ready
 	s.ready <- true
+	logger.Debug("Dfproxy Dfdaemon received initial HeartBeat packet, stream is ready")
 
 	// We got initial HeartBeat request, and we're ready to send server packet back to client as
 	// dfdaemon requests.
@@ -97,12 +100,14 @@ func (s *Service) Dfdaemon(stream dfproxy.DaemonProxy_DfdaemonServer) error {
 }
 
 func (s *Service) handleServerPacket(stream dfproxy.DaemonProxy_DfdaemonServer, serverPkt dfproxy.DaemonProxyServerPacket) error {
+	logger.Debugf("dfproxy service handling new ServerPacket: %v", serverPkt)
 	if err := stream.Send(&serverPkt); err != nil {
 		msg := fmt.Sprintf("failed to send server packet: %s", err.Error())
 		logger.Error(msg)
 		return errors.New(msg)
 	}
 
+	logger.Debug("dfproxy service receving ClientPacket")
 	clientPkt, err := stream.Recv()
 	if err != nil {
 		if err == io.EOF {
@@ -118,6 +123,7 @@ func (s *Service) handleServerPacket(stream dfproxy.DaemonProxy_DfdaemonServer, 
 		return err
 	}
 
+	logger.Debug("dfproxy service received ClientPacket: %v", *clientPkt)
 	s.resCh <- *clientPkt
 	return nil
 }
@@ -275,6 +281,7 @@ func checkReqType(got, expected dfproxy.ReqType) error {
 }
 
 func handleClientPacket(clientPkt dfproxy.DaemonProxyClientPacket, reqType dfproxy.ReqType) error {
+	logger.Debugf("dfproxy service handling new ClientPacket: %v", clientPkt)
 	if err := checkReqType(clientPkt.GetType(), reqType); err != nil {
 		return err
 	}

@@ -231,6 +231,10 @@ func Error(args ...interface{}) {
 	CoreLogger.Error(args...)
 }
 
+func Debug(args ...interface{}) {
+	CoreLogger.Debug(args...)
+}
+
 func Debugf(template string, args ...interface{}) {
 	CoreLogger.Debugf(template, args...)
 }
