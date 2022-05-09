@@ -134,6 +134,8 @@ func (c *Client) Do() error {
 
 func (c *Client) handleServerPacket(stream dfproxy.DaemonProxy_DfdaemonClient, serverPkt *dfproxy.DaemonProxyServerPacket) error {
 	reqType := serverPkt.GetType()
+	reqTypeName := dfproxy.ReqType_name[int32(reqType)]
+	logger.Infof("dfproxy handling new server packet %s", reqTypeName)
 	if serverPkt.DaemonReq == nil && reqType != dfproxy.ReqType_CheckHealth {
 		return errors.New("invalid dfproxy server packet, DfDaemonReq is nil")
 	}
@@ -147,6 +149,7 @@ func (c *Client) handleServerPacket(stream dfproxy.DaemonProxy_DfdaemonClient, s
 		clientPkt.Error = handleError(c.daemonClient.CheckHealth(stream.Context(), *c.config.Daemon.DaemonGRPC))
 	case dfproxy.ReqType_StatTask:
 		statReq := serverPkt.DaemonReq.StatTask
+		logger.Infof("dfproxy redirecting server req %v", *statReq)
 		if statReq == nil {
 			e := common.NewGrpcDfError(base.Code_BadRequest, "StatTaskRequest is empty")
 			clientPkt.Error = e
@@ -155,6 +158,7 @@ func (c *Client) handleServerPacket(stream dfproxy.DaemonProxy_DfdaemonClient, s
 		}
 	case dfproxy.ReqType_ImportTask:
 		importReq := serverPkt.DaemonReq.ImportTask
+		logger.Infof("dfproxy redirecting server req %v", *importReq)
 		if importReq == nil {
 			e := common.NewGrpcDfError(base.Code_BadRequest, "ImportTaskRequest is empty")
 			clientPkt.Error = e
@@ -163,6 +167,7 @@ func (c *Client) handleServerPacket(stream dfproxy.DaemonProxy_DfdaemonClient, s
 		}
 	case dfproxy.ReqType_ExportTask:
 		exportReq := serverPkt.DaemonReq.ExportTask
+		logger.Infof("dfproxy redirecting server req %v", *exportReq)
 		if exportReq == nil {
 			e := common.NewGrpcDfError(base.Code_BadRequest, "ExportTaskRequest is empty")
 			clientPkt.Error = e
@@ -171,6 +176,7 @@ func (c *Client) handleServerPacket(stream dfproxy.DaemonProxy_DfdaemonClient, s
 		}
 	case dfproxy.ReqType_DeleteTask:
 		deleteReq := serverPkt.DaemonReq.DeleteTask
+		logger.Infof("dfproxy redirecting server req %v", *deleteReq)
 		if deleteReq == nil {
 			e := common.NewGrpcDfError(base.Code_BadRequest, "DeleteTaskRequest is empty")
 			clientPkt.Error = e
@@ -184,6 +190,7 @@ func (c *Client) handleServerPacket(stream dfproxy.DaemonProxy_DfdaemonClient, s
 		clientPkt.Error = e
 	}
 
+	logger.Infof("dfproxy sending back client packet: type %s, error %s", reqTypeName, clientPkt.Error)
 	if err := stream.Send(&clientPkt); err != nil {
 		msg := fmt.Sprintf("failed to send client packet: %s", err.Error())
 		logger.Error(msg)
