@@ -24,6 +24,7 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+	"strconv"
 	"time"
 
 	"d7y.io/dragonfly/v2/dfproxy/config"
@@ -38,6 +39,7 @@ import (
 	daemonclient "d7y.io/dragonfly/v2/pkg/rpc/dfdaemon/client"
 	"d7y.io/dragonfly/v2/pkg/rpc/dfproxy"
 	"d7y.io/dragonfly/v2/pkg/rpc/dfproxy/client"
+	"github.com/mdlayher/vsock"
 	"github.com/pkg/errors"
 	"google.golang.org/grpc"
 )
@@ -245,7 +247,20 @@ func (s *Server) Serve() error {
 		}
 		_ = os.Remove(s.listen.Addr)
 	}
-	listener, err := net.Listen(string(s.listen.Type), s.listen.Addr)
+
+	var listener net.Listener
+	var err error
+	if s.listen.Type == dfnet.VSOCK {
+		port, err := strconv.ParseUint(s.listen.Addr, 10, 32)
+		if err != nil {
+			msg := fmt.Sprintf("failed to convert vsock port (%s) to uint32: %s", err.Error())
+			logger.Error(msg)
+			return errors.New(msg)
+		}
+		listener, err = vsock.Listen(uint32(port), nil)
+	} else {
+		listener, err = net.Listen(string(s.listen.Type), s.listen.Addr)
+	}
 	if err != nil {
 		msg := fmt.Sprintf("failed to listen on %s: %s", s.listen.GetEndpoint(), err.Error())
 		logger.Error(msg)

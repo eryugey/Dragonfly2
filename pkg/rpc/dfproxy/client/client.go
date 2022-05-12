@@ -32,10 +32,15 @@ func GetClientByAddr(addrs []dfnet.NetAddr, opts ...grpc.DialOption) (DaemonProx
 	if len(addrs) == 0 {
 		return nil, errors.New("address list of dfproxy is empty")
 	}
+
+	dialOpts, err := rpc.VsockDialerOption(addrs, opts)
+	if err != nil {
+		return nil, err
+	}
 	pc := &daemonProxyClient{
 		rpc.NewConnection(context.Background(), "dfproxy-static", addrs, []rpc.ConnOption{
 			rpc.WithConnExpireTime(0 * time.Second),
-			rpc.WithDialOption(opts),
+			rpc.WithDialOption(dialOpts),
 		}),
 	}
 	logger.Infof("dfproxy server list: %s", addrs)
