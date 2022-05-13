@@ -141,7 +141,7 @@ func (c *Client) handleServerPacket(stream dfproxy.DaemonProxy_DfdaemonClient, s
 	reqType := serverPkt.GetType()
 	reqTypeName := dfproxy.ReqType_name[int32(reqType)]
 	if serverPkt.DaemonReq == nil && reqType != dfproxy.ReqType_CheckHealth {
-		return errors.New("invalid dfproxy server packet, DfDaemonReq is nil")
+		return fmt.Errorf("invalid dfproxy server packet %s, DfDaemonReq is nil", reqTypeName)
 	}
 
 	clientPkt := dfproxy.DaemonProxyClientPacket{

@@ -195,6 +195,9 @@ func (s *Service) CheckHealth(ctx context.Context, _target dfnet.NetAddr, _opts 
 func (s *Service) StatTask(ctx context.Context, req *dfdaemon.StatTaskRequest, _opts ...grpc.CallOption) error {
 	reqType := dfproxy.ReqType_StatTask
 	serverPkt, resCh := s.newServerPacket(reqType)
+	serverPkt.DaemonReq = &dfproxy.DfDaemonReq{
+		StatTask: req,
+	}
 
 	wLog := logger.With("Cid", req.Cid, "Tag", req.UrlMeta.Tag)
 	wLog.Info("dfproxy starts to stat task")
@@ -216,6 +219,9 @@ func (s *Service) StatTask(ctx context.Context, req *dfdaemon.StatTaskRequest, _
 func (s *Service) ImportTask(ctx context.Context, req *dfdaemon.ImportTaskRequest, _opts ...grpc.CallOption) error {
 	reqType := dfproxy.ReqType_ImportTask
 	serverPkt, resCh := s.newServerPacket(reqType)
+	serverPkt.DaemonReq = &dfproxy.DfDaemonReq{
+		ImportTask: req,
+	}
 
 	wLog := logger.With("Cid", req.Cid, "Tag", req.UrlMeta.Tag, "file", req.Path)
 	wLog.Info("dfproxy starts to import task")
@@ -237,6 +243,9 @@ func (s *Service) ImportTask(ctx context.Context, req *dfdaemon.ImportTaskReques
 func (s *Service) ExportTask(ctx context.Context, req *dfdaemon.ExportTaskRequest, _opts ...grpc.CallOption) error {
 	reqType := dfproxy.ReqType_ExportTask
 	serverPkt, resCh := s.newServerPacket(reqType)
+	serverPkt.DaemonReq = &dfproxy.DfDaemonReq{
+		ExportTask: req,
+	}
 
 	wLog := logger.With("Cid", req.Cid, "Tag", req.UrlMeta.Tag, "output", req.Output)
 	wLog.Info("dfproxy starts to export task")
@@ -258,6 +267,9 @@ func (s *Service) ExportTask(ctx context.Context, req *dfdaemon.ExportTaskReques
 func (s *Service) DeleteTask(ctx context.Context, req *dfdaemon.DeleteTaskRequest, _opts ...grpc.CallOption) error {
 	reqType := dfproxy.ReqType_DeleteTask
 	serverPkt, resCh := s.newServerPacket(reqType)
+	serverPkt.DaemonReq = &dfproxy.DfDaemonReq{
+		DeleteTask: req,
+	}
 
 	wLog := logger.With("Cid", req.Cid, "Tag", req.UrlMeta.Tag)
 	wLog.Info("dfproxy starts to delete task")
