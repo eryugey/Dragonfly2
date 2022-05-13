@@ -90,6 +90,7 @@ func (s *Service) Dfdaemon(stream dfproxy.DaemonProxy_DfdaemonServer) error {
 		select {
 		case <-ctx.Done():
 			logger.Infof("Dfproxy Dfdaemon context done: %s", ctx.Err())
+			s.ready <- false
 			return ctx.Err()
 		case serverPkt := <-s.reqCh:
 			if err := s.handleServerPacket(stream, serverPkt); err != nil {
