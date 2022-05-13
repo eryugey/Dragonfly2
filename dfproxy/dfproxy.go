@@ -118,6 +118,7 @@ func (c *Client) Do() error {
 		}
 
 		reqType := serverPkt.GetType()
+		hbPkt.SeqNum = serverPkt.GetSeqNum()
 		switch reqType {
 		case dfproxy.ReqType_HeartBeat:
 			logger.Warn("unexpected heart beat request from dfproxy server")
@@ -125,9 +126,11 @@ func (c *Client) Do() error {
 				logger.Errorf("failed to send heart beat packet: %s", err.Error())
 			}
 		default:
-			if err := c.handleServerPacket(stream, serverPkt); err != nil {
-				logger.Errorf("failed to handle server packet: %s", err.Error())
-			}
+			go func() {
+				if err := c.handleServerPacket(stream, serverPkt); err != nil {
+					logger.Errorf("failed to handle server packet: %s", err.Error())
+				}
+			}()
 		}
 	}
 
@@ -142,8 +145,9 @@ func (c *Client) handleServerPacket(stream dfproxy.DaemonProxy_DfdaemonClient, s
 	}
 
 	clientPkt := dfproxy.DaemonProxyClientPacket{
-		Type:  reqType,
-		Error: nil,
+		Type:   reqType,
+		SeqNum: serverPkt.GetSeqNum(),
+		Error:  nil,
 	}
 	switch reqType {
 	case dfproxy.ReqType_CheckHealth:
