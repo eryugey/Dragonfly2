@@ -21,11 +21,13 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"sync/atomic"
 	"time"
 
 	logger "d7y.io/dragonfly/v2/internal/dflog"
 	"d7y.io/dragonfly/v2/pkg/dfnet"
 	"d7y.io/dragonfly/v2/pkg/rpc/base"
+	"d7y.io/dragonfly/v2/pkg/rpc/base/common"
 	"d7y.io/dragonfly/v2/pkg/rpc/dfdaemon"
 	dfdaemonclient "d7y.io/dragonfly/v2/pkg/rpc/dfdaemon/client"
 	"d7y.io/dragonfly/v2/pkg/rpc/dfproxy"
@@ -33,17 +35,19 @@ import (
 )
 
 type Service struct {
-	ready chan<- bool
-	reqCh chan dfproxy.DaemonProxyServerPacket
-	resCh chan dfproxy.DaemonProxyClientPacket
+	ready   chan<- bool
+	reqCh   chan dfproxy.DaemonProxyServerPacket
+	reqMap  map[uint64](chan dfproxy.DaemonProxyClientPacket)
+	nextSeq uint64
 }
 
 // New service instance
 func New(ready chan<- bool) *Service {
 	return &Service{
-		ready: ready,
-		reqCh: make(chan dfproxy.DaemonProxyServerPacket),
-		resCh: make(chan dfproxy.DaemonProxyClientPacket),
+		ready:   ready,
+		reqCh:   make(chan dfproxy.DaemonProxyServerPacket),
+		reqMap:  make(map[uint64](chan dfproxy.DaemonProxyClientPacket)),
+		nextSeq: 0,
 	}
 }
 
@@ -51,7 +55,6 @@ func New(ready chan<- bool) *Service {
 func (s *Service) Dfdaemon(stream dfproxy.DaemonProxy_DfdaemonServer) error {
 	defer func() {
 		close(s.reqCh)
-		close(s.resCh)
 	}()
 
 	ctx := stream.Context()
@@ -86,61 +89,99 @@ func (s *Service) Dfdaemon(stream dfproxy.DaemonProxy_DfdaemonServer) error {
 
 	// We got initial HeartBeat request, and we're ready to send server packet back to client as
 	// dfdaemon requests.
+	stoppedCh := make(chan struct{})
+
+	// Start a goroutine to receive ClientPacket from stream and dispatch back to corresponding
+	// requester.
+	go func() {
+		for {
+			select {
+			case <-stoppedCh:
+				logger.Info("Dfproxy Dfdaemon stops receving ClientPacket")
+				return
+			default:
+			}
+
+			logger.Debug("dfproxy service waiting for ClientPacket")
+			clientPkt, err := stream.Recv()
+			if err != nil {
+				if err == io.EOF {
+					msg := ("Dfproxy Dfdaemon service received EOF")
+					logger.Warn(msg)
+					return
+				}
+				msg := fmt.Sprintf("Dfproxy Dfdaemon service received error: %s", err.Error())
+				logger.Error(msg)
+				return
+			}
+			resCh, ok := s.reqMap[clientPkt.GetSeqNum()]
+			if !ok {
+				logger.Warnf("invalid client packet seq number %v", clientPkt.GetSeqNum())
+				continue
+			}
+			resCh <- *clientPkt
+		}
+	}()
+
+	// Start a loop to receive ServerPacket and handle it in a goroutine
 	for {
 		select {
 		case <-ctx.Done():
 			logger.Infof("Dfproxy Dfdaemon context done: %s", ctx.Err())
 			s.ready <- false
+			close(stoppedCh)
 			return ctx.Err()
 		case serverPkt := <-s.reqCh:
-			if err := s.handleServerPacket(stream, serverPkt); err != nil {
-				logger.Warnf("Failed to handle server req: %s", err.Error())
+			resCh, ok := s.reqMap[serverPkt.GetSeqNum()]
+			if !ok {
+				logger.Warnf("invalid server packet seq number %v", serverPkt.GetSeqNum())
+				continue
 			}
+			go func() {
+				s.sendServerPacket(stream, serverPkt, resCh)
+			}()
 		}
 	}
 }
 
-func (s *Service) handleServerPacket(stream dfproxy.DaemonProxy_DfdaemonServer, serverPkt dfproxy.DaemonProxyServerPacket) error {
+func (s *Service) sendServerPacket(stream dfproxy.DaemonProxy_DfdaemonServer, serverPkt dfproxy.DaemonProxyServerPacket, clientPktCh chan<- dfproxy.DaemonProxyClientPacket) {
 	logger.Debugf("dfproxy service handling new ServerPacket: %v", serverPkt)
+	clientPkt := dfproxy.DaemonProxyClientPacket{
+		Type: serverPkt.GetType(),
+	}
 	if err := stream.Send(&serverPkt); err != nil {
 		msg := fmt.Sprintf("failed to send server packet: %s", err.Error())
-		logger.Error(msg)
-		return errors.New(msg)
+		e := common.NewGrpcDfError(base.Code_UnknownError, msg)
+		clientPkt.Error = e
+		clientPktCh <- clientPkt
 	}
+	return
+}
 
-	logger.Debug("dfproxy service receving ClientPacket")
-	clientPkt, err := stream.Recv()
-	if err != nil {
-		if err == io.EOF {
-			msg := ("Dfproxy Dfdaemon service received unexpected EOF")
-			logger.Error(msg)
-			return errors.New(msg)
-		}
-		msg := fmt.Sprintf("Dfproxy Dfdaemon service received error: %s", err.Error())
-		logger.Error(msg)
-		return errors.New(msg)
-	}
-	if err := checkReqType(clientPkt.GetType(), serverPkt.GetType()); err != nil {
-		return err
-	}
+func (s *Service) getNextSeq() uint64 {
+	return atomic.AddUint64(&s.nextSeq, 1)
+}
 
-	logger.Debug("dfproxy service received ClientPacket: %v", *clientPkt)
-	s.resCh <- *clientPkt
-	return nil
+func (s *Service) newServerPacket(reqType dfproxy.ReqType) (dfproxy.DaemonProxyServerPacket, chan dfproxy.DaemonProxyClientPacket) {
+	resCh := make(chan dfproxy.DaemonProxyClientPacket)
+	serverPkt := dfproxy.DaemonProxyServerPacket{
+		Type:   reqType,
+		SeqNum: s.getNextSeq(),
+	}
+	s.reqMap[serverPkt.GetSeqNum()] = resCh
+	return serverPkt, resCh
 }
 
 func (s *Service) CheckHealth(ctx context.Context, _target dfnet.NetAddr, _opts ...grpc.CallOption) error {
 	reqType := dfproxy.ReqType_CheckHealth
-	serverPkt := dfproxy.DaemonProxyServerPacket{
-		Type: reqType,
-	}
+	serverPkt, resCh := s.newServerPacket(reqType)
 
 	logger.Info("dfproxy starts to check health")
 
 	start := time.Now()
 	s.reqCh <- serverPkt
 	select {
-	case clientPkt := <-s.resCh:
+	case clientPkt := <-resCh:
 		if err := handleClientPacket(clientPkt, reqType); err != nil {
 			return err
 		}
@@ -153,12 +194,7 @@ func (s *Service) CheckHealth(ctx context.Context, _target dfnet.NetAddr, _opts 
 
 func (s *Service) StatTask(ctx context.Context, req *dfdaemon.StatTaskRequest, _opts ...grpc.CallOption) error {
 	reqType := dfproxy.ReqType_StatTask
-	serverPkt := dfproxy.DaemonProxyServerPacket{
-		Type: dfproxy.ReqType_StatTask,
-		DaemonReq: &dfproxy.DfDaemonReq{
-			StatTask: req,
-		},
-	}
+	serverPkt, resCh := s.newServerPacket(reqType)
 
 	wLog := logger.With("Cid", req.Cid, "Tag", req.UrlMeta.Tag)
 	wLog.Info("dfproxy starts to stat task")
@@ -166,7 +202,7 @@ func (s *Service) StatTask(ctx context.Context, req *dfdaemon.StatTaskRequest, _
 	start := time.Now()
 	s.reqCh <- serverPkt
 	select {
-	case clientPkt := <-s.resCh:
+	case clientPkt := <-resCh:
 		if err := handleClientPacket(clientPkt, reqType); err != nil {
 			return err
 		}
@@ -179,12 +215,7 @@ func (s *Service) StatTask(ctx context.Context, req *dfdaemon.StatTaskRequest, _
 
 func (s *Service) ImportTask(ctx context.Context, req *dfdaemon.ImportTaskRequest, _opts ...grpc.CallOption) error {
 	reqType := dfproxy.ReqType_ImportTask
-	serverPkt := dfproxy.DaemonProxyServerPacket{
-		Type: dfproxy.ReqType_ImportTask,
-		DaemonReq: &dfproxy.DfDaemonReq{
-			ImportTask: req,
-		},
-	}
+	serverPkt, resCh := s.newServerPacket(reqType)
 
 	wLog := logger.With("Cid", req.Cid, "Tag", req.UrlMeta.Tag, "file", req.Path)
 	wLog.Info("dfproxy starts to import task")
@@ -192,7 +223,7 @@ func (s *Service) ImportTask(ctx context.Context, req *dfdaemon.ImportTaskReques
 	start := time.Now()
 	s.reqCh <- serverPkt
 	select {
-	case clientPkt := <-s.resCh:
+	case clientPkt := <-resCh:
 		if err := handleClientPacket(clientPkt, reqType); err != nil {
 			return err
 		}
@@ -205,12 +236,7 @@ func (s *Service) ImportTask(ctx context.Context, req *dfdaemon.ImportTaskReques
 
 func (s *Service) ExportTask(ctx context.Context, req *dfdaemon.ExportTaskRequest, _opts ...grpc.CallOption) error {
 	reqType := dfproxy.ReqType_ExportTask
-	serverPkt := dfproxy.DaemonProxyServerPacket{
-		Type: dfproxy.ReqType_ExportTask,
-		DaemonReq: &dfproxy.DfDaemonReq{
-			ExportTask: req,
-		},
-	}
+	serverPkt, resCh := s.newServerPacket(reqType)
 
 	wLog := logger.With("Cid", req.Cid, "Tag", req.UrlMeta.Tag, "output", req.Output)
 	wLog.Info("dfproxy starts to export task")
@@ -218,7 +244,7 @@ func (s *Service) ExportTask(ctx context.Context, req *dfdaemon.ExportTaskReques
 	start := time.Now()
 	s.reqCh <- serverPkt
 	select {
-	case clientPkt := <-s.resCh:
+	case clientPkt := <-resCh:
 		if err := handleClientPacket(clientPkt, reqType); err != nil {
 			return err
 		}
@@ -231,12 +257,7 @@ func (s *Service) ExportTask(ctx context.Context, req *dfdaemon.ExportTaskReques
 
 func (s *Service) DeleteTask(ctx context.Context, req *dfdaemon.DeleteTaskRequest, _opts ...grpc.CallOption) error {
 	reqType := dfproxy.ReqType_DeleteTask
-	serverPkt := dfproxy.DaemonProxyServerPacket{
-		Type: dfproxy.ReqType_DeleteTask,
-		DaemonReq: &dfproxy.DfDaemonReq{
-			DeleteTask: req,
-		},
-	}
+	serverPkt, resCh := s.newServerPacket(reqType)
 
 	wLog := logger.With("Cid", req.Cid, "Tag", req.UrlMeta.Tag)
 	wLog.Info("dfproxy starts to delete task")
@@ -244,7 +265,7 @@ func (s *Service) DeleteTask(ctx context.Context, req *dfdaemon.DeleteTaskReques
 	start := time.Now()
 	s.reqCh <- serverPkt
 	select {
-	case clientPkt := <-s.resCh:
+	case clientPkt := <-resCh:
 		if err := handleClientPacket(clientPkt, reqType); err != nil {
 			return err
 		}
@@ -277,6 +298,16 @@ func checkReqType(got, expected dfproxy.ReqType) error {
 		msg := fmt.Sprintf("invalid req type %d %s, expected %d %s", got, dfproxy.ReqType_name[int32(got)], expected, dfproxy.ReqType_name[int32(expected)])
 		logger.Error(msg)
 		return errors.New(msg)
+	}
+	return nil
+}
+
+func checkClientPacket(clientPkt *dfproxy.DaemonProxyClientPacket, serverPkt *dfproxy.DaemonProxyServerPacket) error {
+	if err := checkReqType(clientPkt.GetType(), serverPkt.GetType()); err != nil {
+		return err
+	}
+	if clientPkt.GetSeqNum() != serverPkt.GetSeqNum() {
+		return fmt.Errorf("invalid req seq number %v, expected %v", clientPkt.GetSeqNum(), serverPkt.GetSeqNum())
 	}
 	return nil
 }

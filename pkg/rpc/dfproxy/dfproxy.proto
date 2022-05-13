@@ -41,12 +41,14 @@ message DfDaemonReq{
 
 message DaemonProxyClientPacket{
   ReqType type = 1;
-  base.GrpcDfError error = 2;
+  uint64 seq_num = 2;
+  base.GrpcDfError error = 3;
 }
 
 message DaemonProxyServerPacket{
   ReqType type = 1;
-  DfDaemonReq daemon_req = 2;
+  uint64 seq_num = 2;
+  DfDaemonReq daemon_req = 3;
 }
 
 // Proxy service for dfdaemon interface

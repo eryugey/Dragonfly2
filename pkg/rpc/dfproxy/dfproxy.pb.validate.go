@@ -148,6 +148,8 @@ func (m *DaemonProxyClientPacket) Validate() error {
 
 	// no validation rules for Type
 
+	// no validation rules for SeqNum
+
 	if v, ok := interface{}(m.GetError()).(interface{ Validate() error }); ok {
 		if err := v.Validate(); err != nil {
 			return DaemonProxyClientPacketValidationError{
@@ -226,6 +228,8 @@ func (m *DaemonProxyServerPacket) Validate() error {
 	}
 
 	// no validation rules for Type
+
+	// no validation rules for SeqNum
 
 	if v, ok := interface{}(m.GetDaemonReq()).(interface{ Validate() error }); ok {
 		if err := v.Validate(); err != nil {
